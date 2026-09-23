@@ -104,6 +104,18 @@
     background: #fff7ec; border: 1px solid #e8dcc0; border-radius: 8px;
     padding: 8px 12px; font-size: 0.76em; color: #8a6d3b; margin-bottom: 10px; line-height: 1.4;
   }
+
+  @media (max-width: 680px) {
+    #app { flex-direction: column; }
+    #map { flex: 0 0 48vh; height: 48vh; width: 100%; }
+    #sidebar {
+      width: 100%; flex: 1 1 auto; border-left: none; border-top: 1px solid #e3ddd0;
+      max-height: 52vh;
+    }
+    h1 { font-size: 1.15em; }
+    .row { padding: 8px 10px; }
+    input[type=search] { font-size: 16px; }
+  }
 </style>
 </head>
 <body>

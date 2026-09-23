@@ -137,6 +137,18 @@
     background: #fff; cursor: pointer;
   }
   .yearbox button:hover { background: #f2ece0; }
+
+  @media (max-width: 680px) {
+    #app { flex-direction: column; }
+    #map { flex: 0 0 48vh; height: 48vh; width: 100%; }
+    #sidebar {
+      width: 100%; flex: 1 1 auto; border-left: none; border-top: 1px solid #e3ddd0;
+      max-height: 52vh;
+    }
+    h1 { font-size: 1.15em; }
+    .row { padding: 8px 10px; }
+    input[type=search] { font-size: 16px; }
+  }
 </style>
 </head>
 <body>
