@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Places in Britain, France &amp; the Crusading World — A History of the English-Speaking Peoples, Vol. I (Winston Churchill), Ch. 9–22</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+<script src="https://unpkg.com/@openhistoricalmap/maplibre-gl-dates/index.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #2b2620; background: #fff;
+  }
+  #app { display: flex; height: 100vh; }
+  #map { flex: 1 1 auto; height: 100%; }
+  #sidebar {
+    width: 360px; flex: 0 0 360px; border-left: 1px solid #e3ddd0; padding: 14px;
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  h1 { font-size: 1.02em; margin: 0 0 4px 0; font-weight: 600; }
+  .subtitle { font-size: 0.8em; color: #756f66; margin: 0 0 10px 0; line-height:1.4; }
+  .legend { font-size: 0.75em; color: #6b655c; margin: 0 0 6px 0; display:flex; gap:12px; flex-wrap:wrap; }
+  .legend span { display:flex; align-items:center; gap:5px; }
+  .swatch { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .swatch.eu { background: rgba(122,58,30,0.72); border:1px solid #4a230f; }
+  .swatch.noneu { background: rgba(43,92,99,0.72); border:1px solid #163438; }
+  .legend2 {
+    font-size: 0.72em; color: #6b655c; margin: 0 0 12px 0; display:flex; flex-wrap:wrap;
+    gap: 4px 10px; background:#f7f4ee; border:1px solid #e3ddd0; border-radius:8px; padding:7px 9px;
+  }
+  .legend2 span { display:flex; align-items:center; gap:4px; }
+  .legend2 .ic { font-size: 1.15em; color:#7a3a1e; width:1.1em; text-align:center; }
+  .stat {
+    background: #f7f4ee; border: 1px solid #e3ddd0; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.85em; margin-bottom: 10px;
+  }
+  .stat b { font-size: 1.3em; display:block; color:#7a3a1e; }
+  input[type=search] {
+    width: 100%; padding: 6px 8px; border: 1px solid #d8d1c2; border-radius: 6px;
+    font-size: 0.85em; margin-bottom: 8px;
+  }
+  .list { flex: 1 1 auto; overflow-y: auto; border: 1px solid #e3ddd0; border-radius: 8px; min-height: 100px; }
+  .row {
+    display: flex; justify-content: space-between; align-items:center; padding: 5px 10px;
+    font-size: 0.82em; border-bottom: 1px solid #efeae0; cursor: pointer; gap: 6px;
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover, .row.active { background: #f2ece0; }
+  .row.noneu .rowname::after { content: " *"; color:#2b5c63; }
+  .rowicon { width: 1.1em; text-align:center; color:#7a3a1e; font-size:0.95em; flex: 0 0 auto; }
+  .rowname { flex: 1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rowyear { color: #8b8478; font-variant-numeric: tabular-nums; font-size:0.92em; }
+  .rowcount { color: #7a3a1e; font-weight: 600; min-width: 2em; text-align:right; }
+  .detail {
+    margin-top: 10px; padding: 10px 12px; background: #f7f4ee; border: 1px solid #e3ddd0;
+    border-radius: 8px; font-size: 0.85em; min-height: 50px;
+  }
+  .detail .name { font-weight: 600; margin-bottom: 3px; }
+  .detail .year { color: #7a3a1e; font-weight:600; }
+  .detail .cat { color: #756f66; font-style:italic; }
+  .detail .note { color: #6b655c; margin-top: 4px; }
+  .place-marker-wrap {
+    position: relative;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+  .place-marker {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(122,58,30,0.72);
+    border: 1px solid #4a230f;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.95);
+    line-height: 1;
+  }
+  .place-marker.noneu {
+    background: rgba(43,92,99,0.72);
+    border: 1px solid #163438;
+  }
+  .place-pin {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #241009;
+    border: 1px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .place-marker-wrap.current {
+    box-shadow: 0 0 0 4px rgba(255,196,0,0.55);
+    border-radius: 50%;
+  }
+  .place-marker-wrap.future {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .place-marker-wrap.past {
+    opacity: 0.45;
+  }
+  .maplibregl-popup-content b { color: #7a3a1e; }
+  .maplibregl-popup-content .poptag { color:#756f66; font-style:italic; font-size:0.9em; }
+  .yearbox {
+    background: #f7f4ee; border: 1px solid #e3ddd0; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.85em; margin-bottom: 10px;
+  }
+  .yearbox .yearrow { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .yearbox .yearval { font-size: 1.3em; font-weight: 700; color: #7a3a1e; }
+  .yearbox input[type=range] { width: 100%; }
+  .yearbox .yearends { display: flex; justify-content: space-between; font-size: 0.72em; color: #8b8478; margin-top: 2px; }
+  .yearbox .playrow { display:flex; gap:8px; margin-top:8px; }
+  .yearbox button {
+    font-size: 0.78em; padding: 4px 10px; border-radius: 6px; border: 1px solid #d8d1c2;
+    background: #fff; cursor: pointer;
+  }
+  .yearbox button:hover { background: #f2ece0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <div id="sidebar">
+    <h1>Places in Britain, France &amp; the Crusading World</h1>
+    <p class="subtitle">A History of the English-Speaking Peoples, Vol. I (Winston Churchill) — Chapters 9–22, the Norman Conquest through the Black Death and Edward III (c. 1027–1360). Base map: OpenHistoricalMap (“Historic” style), filtered to the year below, so borders shift as you move the slider. Markers appear as their key event is reached; drag the slider or press Play. Each place has a small dark pin at its exact coordinate, inside the category-icon circle sized by mention count.</p>
+    <div class="legend"><span><span class="swatch eu"></span>British Isles</span><span><span class="swatch noneu"></span>France, Mediterranean &amp; the Holy Land *</span></div>
+    <div class="legend2"><span><span class="ic">★</span>capital / seat of power</span><span><span class="ic">⚔</span>battle / siege</span><span><span class="ic">▤</span>treaty / parliament / charter</span><span><span class="ic">✳</span>revolt / uprising</span><span><span class="ic">⊕</span>crusade / conquest / religious</span><span><span class="ic">⚓</span>naval base / port</span></div>
+    <div class="yearbox">
+      <div class="yearrow"><span>Map shows:</span><span class="yearval" id="yearval">1000</span></div>
+      <input type="range" id="yearslider" min="1000" max="1400" value="1000" step="1">
+      <div class="yearends"><span>1000</span><span>1400</span></div>
+      <div class="playrow">
+        <button id="playbtn">▶ Play</button>
+        <button id="resetbtn">Reset</button>
+      </div>
+    </div>
+    <div class="stat"><b>729</b>total place-mentions, 171 distinct places (chapters 9–22)</div>
+    <input type="search" id="search" placeholder="Filter places…">
+    <div class="list" id="list"></div>
+    <div class="detail" id="detail">Click a place, on the map or in the list, to see details.</div>
+  </div>
+</div>
+
+<script>
+var places = [{"name": "London", "count": 30, "lat": 51.5074, "lon": -0.1278, "year": 1066, "note": "Seat of royal government; submitted to William the Conqueror, 1066, and grew into the settled capital of the realm", "eu": true, "r": 18.4, "cat": "capital", "icon": "★"}, {"name": "Westminster", "count": 24, "lat": 51.4995, "lon": -0.1273, "year": 1066, "note": "Site of Westminster Abbey (William I's Christmas Day coronation, 1066) and the developing royal courts and Parliament", "eu": true, "r": 17.5, "cat": "capital", "icon": "★"}, {"name": "Canterbury", "count": 19, "lat": 51.2802, "lon": 1.0789, "year": 1170, "note": "Murder of Archbishop Thomas Becket in the cathedral, December 29 1170", "eu": true, "r": 16.6, "cat": "crusade", "icon": "⊕"}, {"name": "Winchester", "count": 12, "lat": 51.0632, "lon": -1.308, "year": 1100, "note": "Old Saxon capital and royal treasury, seized by Henry I on the death of William Rufus, 1100", "eu": true, "r": 14.8, "cat": "capital", "icon": "★"}, {"name": "Hastings", "count": 9, "lat": 50.8543, "lon": 0.5735, "year": 1066, "note": "Duke William's decisive victory over King Harold, October 14 1066", "eu": true, "r": 13.7, "cat": "battle", "icon": "⚔"}, {"name": "Berwick", "count": 9, "lat": 55.7711, "lon": -2.006, "year": 1296, "note": "Sacked with great slaughter by Edward I, 1296; fought over repeatedly in the Scottish wars", "eu": true, "r": 13.7, "cat": "battle", "icon": "⚔"}, {"name": "Bannockburn", "count": 8, "lat": 56.0886, "lon": -3.9128, "year": 1314, "note": "Robert Bruce's decisive victory over Edward II, June 1314", "eu": true, "r": 13.3, "cat": "battle", "icon": "⚔"}, {"name": "York", "count": 8, "lat": 53.9591, "lon": -1.0815, "year": 1069, "note": "Harried and burned by William the Conqueror during the suppression of the North", "eu": true, "r": 13.3, "cat": "battle", "icon": "⚔"}, {"name": "Gloucester", "count": 11, "lat": 51.8642, "lon": -2.238, "year": 1278, "note": "Statute of Gloucester, 1278, and a recurring seat of royal and baronial power", "eu": true, "r": 14.5, "cat": "treaty", "icon": "▤"}, {"name": "Lincoln", "count": 7, "lat": 53.2307, "lon": -0.5406, "year": 1217, "note": "“Fair of Lincoln” — decisive royalist victory over the rebel barons and Prince Louis, 1217", "eu": true, "r": 12.8, "cat": "battle", "icon": "⚔"}, {"name": "Oxford", "count": 6, "lat": 51.752, "lon": -1.2577, "year": 1258, "note": "Provisions of Oxford, 1258 — the first written constitution imposed on an English king", "eu": true, "r": 12.2, "cat": "treaty", "icon": "▤"}, {"name": "Stirling", "count": 6, "lat": 56.1165, "lon": -3.9369, "year": 1314, "note": "Bannockburn was fought beneath Stirling Castle, the key to the north", "eu": true, "r": 12.2, "cat": "battle", "icon": "⚔"}, {"name": "Salisbury", "count": 6, "lat": 51.0688, "lon": -1.7936, "year": 1297, "note": "Barons refused Edward I's plan to split the army between Gascony and Flanders, 1297", "eu": true, "r": 12.2, "cat": "treaty", "icon": "▤"}, {"name": "Ely", "count": 5, "lat": 52.3989, "lon": 0.262, "year": 1071, "note": "Fenland refuge of the last Saxon resistance to William the Conqueror", "eu": true, "r": 11.6, "cat": "revolution", "icon": "✳"}, {"name": "Windsor", "count": 5, "lat": 51.4839, "lon": -0.6044, "year": 1216, "note": "Royal castle and seat of government through the civil wars of John's and Henry III's reigns", "eu": true, "r": 11.6, "cat": "treaty", "icon": "▤"}, {"name": "Runnymede", "count": 4, "lat": 51.4429, "lon": -0.56, "year": 1215, "note": "Magna Carta sealed by King John, June 15 1215", "eu": true, "r": 10.8, "cat": "treaty", "icon": "▤"}, {"name": "Wallingford", "count": 4, "lat": 51.599, "lon": -1.125, "year": 1153, "note": "Saxon submission to William, 1066; Treaty of Wallingford ending Stephen and Matilda's civil war, 1153", "eu": true, "r": 10.8, "cat": "treaty", "icon": "▤"}, {"name": "Evesham", "count": 4, "lat": 52.093, "lon": -1.947, "year": 1265, "note": "Simon de Montfort defeated and killed, ending the Second Barons' War, August 1265", "eu": true, "r": 10.8, "cat": "battle", "icon": "⚔"}, {"name": "Kenilworth", "count": 3, "lat": 52.3492, "lon": -1.583, "year": 1266, "note": "Long siege of Simon de Montfort's rebel garrison after Evesham", "eu": true, "r": 9.9, "cat": "battle", "icon": "⚔"}, {"name": "Wessex", "count": 4, "lat": 51.1, "lon": -1.6, "year": 1066, "note": "Harold's own earldom and power base before his kingship", "eu": true, "r": 10.8, "cat": "territory", "icon": ""}, {"name": "Kent", "count": 4, "lat": 51.25, "lon": 0.75, "year": 1066, "note": "First region to resist William's advance on London, 1066", "eu": true, "r": 10.8, "cat": "territory", "icon": ""}, {"name": "Humber", "count": 4, "lat": 53.68, "lon": -0.4, "year": 1066, "note": "Estuary crossed by the Norwegian invasion fleet of Harald Hardrada, 1066", "eu": true, "r": 10.8, "cat": "territory", "icon": ""}, {"name": "Yorkshire", "count": 3, "lat": 54.0, "lon": -1.5, "year": 1069, "note": "Laid waste in the Harrying of the North that followed the rebellions against William I", "eu": true, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "Chester", "count": 4, "lat": 53.191, "lon": -2.891, "year": 1264, "note": "Earldom of the powerful Ranulf, key to control of the Welsh Marches", "eu": true, "r": 10.8, "cat": "territory", "icon": ""}, {"name": "Dover", "count": 2, "lat": 51.1279, "lon": 1.3134, "year": 1217, "note": "Hubert de Burgh's naval victory over the French fleet reinforcing Prince Louis, 1217", "eu": true, "r": 8.7, "cat": "port", "icon": "⚓"}, {"name": "Cinque Ports", "count": 4, "lat": 51.05, "lon": 0.97, "year": 1213, "note": "Confederation of south-coast ports that supplied England's medieval navy and Channel defence", "eu": true, "r": 10.8, "cat": "port", "icon": "⚓"}, {"name": "Stirling Bridge", "count": 2, "lat": 56.13, "lon": -3.93, "year": 1297, "note": "William Wallace's victory over the Earl of Surrey, September 1297", "eu": true, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Falkirk", "count": 2, "lat": 56.0011, "lon": -3.783, "year": 1298, "note": "Edward I's victory over Wallace's schiltrons, July 1298", "eu": true, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Perth", "count": 2, "lat": 56.396, "lon": -3.437, "year": 1296, "note": "Surrendered to Edward I's advance into Scotland, 1296", "eu": true, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Hereford", "count": 2, "lat": 52.0567, "lon": -2.716, "year": 1265, "note": "Marcher stronghold of the de Bohun earls of Hereford", "eu": true, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Southwark", "count": 1, "lat": 51.5039, "lon": -0.087, "year": 1066, "note": "William bypassed London through here on his circuitous march to the crown", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Chilterns", "count": 1, "lat": 51.65, "lon": -0.75, "year": 1066, "note": "Wooded hills on William's roundabout route to accept London's submission", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Berkhamsted", "count": 1, "lat": 51.7606, "lon": -0.565, "year": 1066, "note": "Saxon notables and clergy submitted to William here before his coronation", "eu": true, "r": 7.0, "cat": "treaty", "icon": "▤"}, {"name": "Richmond (Yorkshire)", "count": 1, "lat": 54.402, "lon": -1.738, "year": 1069, "note": "Great Norman earldom created to control the conquered North", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Durham", "count": 4, "lat": 54.7761, "lon": -1.576, "year": 1346, "note": "Palatine bishopric; the Battle of Neville's Cross was fought just outside the city, 1346", "eu": true, "r": 10.8, "cat": "battle", "icon": "⚔"}, {"name": "East Anglia", "count": 1, "lat": 52.5, "lon": 1.0, "year": 1075, "note": "Site of the Revolt of the Earls against William the Conqueror, 1075", "eu": true, "r": 7.0, "cat": "revolution", "icon": "✳"}, {"name": "Northumbria", "count": 2, "lat": 55.3, "lon": -1.9, "year": 1069, "note": "Tostig's forfeited earldom, invaded by Harald Hardrada in 1066", "eu": true, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Lewes", "count": 1, "lat": 50.873, "lon": 0.01, "year": 1264, "note": "Simon de Montfort's great victory over Henry III, May 1264", "eu": true, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "St. Albans", "count": 1, "lat": 51.752, "lon": -0.336, "year": 1261, "note": "Rival baronial assembly summoned here against the King, 1261", "eu": true, "r": 7.0, "cat": "treaty", "icon": "▤"}, {"name": "Shrewsbury", "count": 1, "lat": 52.708, "lon": -2.753, "year": 1234, "note": "Marcher town central to Welsh border warfare", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Montgomery", "count": 1, "lat": 52.559, "lon": -3.152, "year": 1102, "note": "Marcher lordship whose lords led baronial opposition to Henry I", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Bury St. Edmunds", "count": 1, "lat": 52.245, "lon": 0.718, "year": 1296, "note": "Autumn Parliament where the clergy, led by Winchelsea, refused Edward I's tax demand", "eu": true, "r": 7.0, "cat": "treaty", "icon": "▤"}, {"name": "Westminster Hall", "count": 1, "lat": 51.4995, "lon": -0.1259, "year": 1305, "note": "William Wallace tried here, with full ceremonial, before his execution", "eu": true, "r": 7.0, "cat": "treaty", "icon": "▤"}, {"name": "Tyburn", "count": 1, "lat": 51.513, "lon": -0.159, "year": 1305, "note": "William Wallace hanged, drawn, and quartered here, 1305", "eu": true, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Romney", "count": 1, "lat": 51.028, "lon": 0.898, "year": 1066, "note": "Its people killed a band of Norman knights and paid for it in William's advance through Kent", "eu": true, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Pevensey", "count": 4, "lat": 50.818, "lon": 0.336, "year": 1066, "note": "William the Conqueror's invasion fleet landed here, September 28 1066", "eu": true, "r": 10.8, "cat": "battle", "icon": "⚔"}, {"name": "Stamford Bridge", "count": 3, "lat": 53.996, "lon": -0.912, "year": 1066, "note": "Harold's victory over Harald Hardrada and Tostig, September 25 1066", "eu": true, "r": 9.9, "cat": "battle", "icon": "⚔"}, {"name": "Dumfries", "count": 1, "lat": 55.07, "lon": -3.605, "year": 1306, "note": "Robert Bruce killed John Comyn in the church here, launching his bid for the Scottish crown", "eu": true, "r": 7.0, "cat": "revolution", "icon": "✳"}, {"name": "Edinburgh", "count": 1, "lat": 55.9533, "lon": -3.1883, "year": 1296, "note": "Surrendered to Edward I's advance into Scotland, 1296", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Cambuskenneth", "count": 1, "lat": 56.121, "lon": -3.918, "year": 1297, "note": "Abbey by the site of the Battle of Stirling Bridge", "eu": true, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Wales", "count": 25, "lat": 53.15, "lon": -3.9, "year": 1284, "note": "Conquered by Edward I in a hard, methodical campaign, 1277–1284; ringed afterwards with great stone castles", "eu": true, "r": 17.7, "cat": "crusade", "icon": "⊕"}, {"name": "Anglesey", "count": 1, "lat": 53.286, "lon": -4.329, "year": 1284, "note": "Conquered island heartland of the princes of Gwynedd, secured by Edward I's castle-building", "eu": true, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Dublin", "count": 2, "lat": 53.3498, "lon": -6.2603, "year": 1171, "note": "Norse-founded city that became the seat of English royal power in Ireland after Henry II's visit, 1171", "eu": true, "r": 8.7, "cat": "crusade", "icon": "⊕"}, {"name": "Waterford", "count": 1, "lat": 52.2593, "lon": -7.1101, "year": 1171, "note": "Norse-founded port, among the first Anglo-Norman strongholds in Ireland", "eu": true, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Limerick", "count": 1, "lat": 52.6638, "lon": -8.6267, "year": 1171, "note": "Norse-founded town on the Shannon, absorbed into the Anglo-Norman lordship", "eu": true, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Cork", "count": 1, "lat": 51.8985, "lon": -8.4756, "year": 1171, "note": "Norse-founded southern port, among the first Anglo-Norman strongholds", "eu": true, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Kildare", "count": 1, "lat": 53.1589, "lon": -6.9096, "year": 1172, "note": "Seat of the powerful Fitzgerald earls descended from Gerald of Windsor", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Ulster", "count": 5, "lat": 54.35, "lon": -6.65, "year": 1315, "note": "Province largely won back by the Gaelic O'Neills, then invaded by Edward Bruce, 1315", "eu": true, "r": 11.6, "cat": "revolution", "icon": "✳"}, {"name": "Connaught", "count": 2, "lat": 53.5, "lon": -8.9, "year": 1315, "note": "Province where Anglo-Norman feudal trappings were openly discarded for Gaelic ways", "eu": true, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Tyrone", "count": 1, "lat": 54.6, "lon": -7.3, "year": 1315, "note": "Won back from Anglo-Norman settlers by the resurgent O'Neills", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Normandy", "count": 63, "lat": 49.0, "lon": 0.4, "year": 1066, "note": "Duchy from which William launched the conquest of England; lost to the French Crown under King John, 1204", "eu": false, "r": 21.5, "cat": "territory", "icon": ""}, {"name": "Rouen", "count": 15, "lat": 49.4431, "lon": 1.0993, "year": 1087, "note": "Norman ducal capital, where William the Conqueror died, September 1087", "eu": false, "r": 15.7, "cat": "capital", "icon": "★"}, {"name": "Caen", "count": 2, "lat": 49.1829, "lon": -0.3707, "year": 1087, "note": "William the Conqueror buried at the abbey of St. Stephen", "eu": false, "r": 8.7, "cat": "crusade", "icon": "⊕"}, {"name": "Falaise", "count": 3, "lat": 48.8945, "lon": -0.1989, "year": 1027, "note": "Birthplace of William the Conqueror, 1027; later the prison of his great-grandnephew, Arthur of Brittany", "eu": false, "r": 9.9, "cat": "battle", "icon": "⚔"}, {"name": "Alencon", "count": 3, "lat": 48.4322, "lon": 0.092, "year": 1051, "note": "William brutally suppressed a revolt here, mutilating the townsfolk who had taunted him as “the tanner's grandson”", "eu": false, "r": 9.9, "cat": "battle", "icon": "⚔"}, {"name": "Val-es-Dunes", "count": 1, "lat": 49.1, "lon": -0.15, "year": 1047, "note": "William's decisive victory, with French royal help, over rebel Norman barons", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Mantes", "count": 1, "lat": 48.991, "lon": 1.719, "year": 1087, "note": "William the Conqueror received his mortal injury during the sack of this town", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Anjou", "count": 20, "lat": 47.47, "lon": -0.55, "year": 1128, "note": "County united to Normandy through Geoffrey Plantagenet's marriage to the Empress Matilda, 1128", "eu": false, "r": 16.8, "cat": "territory", "icon": ""}, {"name": "Maine", "count": 11, "lat": 48.1, "lon": 0.15, "year": 1110, "note": "County repeatedly contested between Normandy/Anjou and the French Crown", "eu": false, "r": 14.5, "cat": "territory", "icon": ""}, {"name": "Touraine", "count": 5, "lat": 47.39, "lon": 0.68, "year": 1154, "note": "County forming part of the Angevin Empire under Henry II", "eu": false, "r": 11.6, "cat": "territory", "icon": ""}, {"name": "Brittany", "count": 16, "lat": 48.2, "lon": -2.9, "year": 1166, "note": "Duchy drawn into the Angevin orbit; Arthur of Brittany's rival claim to the English throne", "eu": false, "r": 15.9, "cat": "territory", "icon": ""}, {"name": "Le Mans", "count": 4, "lat": 48.0061, "lon": 0.1996, "year": 1189, "note": "Henry II died here, defeated by his son Richard and King Philip of France, 1189", "eu": false, "r": 10.8, "cat": "battle", "icon": "⚔"}, {"name": "Chinon", "count": 1, "lat": 47.166, "lon": 0.243, "year": 1189, "note": "Traditionally the place of Henry II's death, in the shadow of his own great castle", "eu": false, "r": 7.0, "cat": "capital", "icon": "★"}, {"name": "Gascony", "count": 16, "lat": 43.9, "lon": -0.5, "year": 1294, "note": "Last Continental possession of the English Crown, cause of repeated wars with France", "eu": false, "r": 15.9, "cat": "territory", "icon": ""}, {"name": "Aquitaine", "count": 12, "lat": 44.85, "lon": 0.3, "year": 1152, "note": "Vast duchy brought to the Plantagenets by Eleanor's marriage to Henry II, 1152", "eu": false, "r": 14.8, "cat": "territory", "icon": ""}, {"name": "Poitou", "count": 7, "lat": 46.58, "lon": 0.34, "year": 1201, "note": "County lost by King John along with the rest of Anjou and Normandy", "eu": false, "r": 12.8, "cat": "territory", "icon": ""}, {"name": "Saintonge", "count": 2, "lat": 45.75, "lon": -0.63, "year": 1152, "note": "Part of Eleanor of Aquitaine's inheritance", "eu": false, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Perigord", "count": 1, "lat": 45.18, "lon": 0.72, "year": 1152, "note": "Part of the Angevin inheritance in south-west France", "eu": false, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Limousin", "count": 1, "lat": 45.83, "lon": 1.26, "year": 1152, "note": "Part of Aquitaine, contested territory of the Angevin Empire", "eu": false, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Angoumois", "count": 1, "lat": 45.65, "lon": 0.16, "year": 1152, "note": "Part of Aquitaine, joined to Normandy and Anjou by marriage", "eu": false, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Auvergne", "count": 1, "lat": 45.78, "lon": 3.08, "year": 1152, "note": "Suzerainty claimed by the Plantagenets amid the vast Angevin dominions", "eu": false, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Toulouse", "count": 5, "lat": 43.6045, "lon": 1.444, "year": 1159, "note": "County claimed but never conquered by the Angevins; later the heart of the Albigensian Crusade", "eu": false, "r": 11.6, "cat": "crusade", "icon": "⊕"}, {"name": "Beziers", "count": 1, "lat": 43.3442, "lon": 3.215, "year": 1209, "note": "Massacre of the Cathars (Albigenses) by Simon de Montfort the elder, 1209", "eu": false, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Carcassonne", "count": 1, "lat": 43.213, "lon": 2.353, "year": 1209, "note": "Captured by Simon de Montfort the elder in the Albigensian Crusade, 1209", "eu": false, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Paris", "count": 15, "lat": 48.8566, "lon": 2.3522, "year": 1259, "note": "Capital of the rival Capetian and Valois kings of France throughout the period", "eu": false, "r": 15.7, "cat": "capital", "icon": "★"}, {"name": "Andelys (Chateau Gaillard)", "count": 2, "lat": 49.239, "lon": 1.414, "year": 1198, "note": "Richard I's great fortress guarding Rouen, built in defiance of a truce with Philip Augustus", "eu": false, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Gisors", "count": 1, "lat": 49.281, "lon": 1.775, "year": 1198, "note": "Richard I routed King Philip's army through the streets here, 1197", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Mirebeau", "count": 1, "lat": 46.786, "lon": 0.181, "year": 1202, "note": "John's surprise capture of his nephew Arthur and the besiegers of his mother Eleanor", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Tenchebrai (Tinchebray)", "count": 2, "lat": 48.775, "lon": -0.729, "year": 1106, "note": "Henry I's decisive victory over his brother Robert, reuniting Normandy and England", "eu": false, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Sluys", "count": 1, "lat": 51.307, "lon": 3.384, "year": 1340, "note": "English naval victory that won control of the Channel ahead of the Crécy campaign", "eu": false, "r": 7.0, "cat": "port", "icon": "⚓"}, {"name": "Tournai", "count": 1, "lat": 50.606, "lon": 3.389, "year": 1340, "note": "Anglo-Flemish siege that ended the opening campaign of the Hundred Years War", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Ghent", "count": 3, "lat": 51.054, "lon": 3.717, "year": 1338, "note": "Flemish town led by Van Artevelde in alliance with Edward III against France", "eu": false, "r": 9.9, "cat": "revolution", "icon": "✳"}, {"name": "Somme", "count": 7, "lat": 50.1, "lon": 1.83, "year": 1346, "note": "River crossed by Edward III's army at a hidden ford on the eve of Crécy", "eu": false, "r": 12.8, "cat": "battle", "icon": "⚔"}, {"name": "Abbeville", "count": 4, "lat": 50.106, "lon": 1.834, "year": 1346, "note": "Assembly point of King Philip's great host before the Battle of Crécy", "eu": false, "r": 10.8, "cat": "battle", "icon": "⚔"}, {"name": "Amiens", "count": 4, "lat": 49.895, "lon": 2.298, "year": 1346, "note": "Point on the French army's line of march to intercept Edward III", "eu": false, "r": 10.8, "cat": "battle", "icon": "⚔"}, {"name": "Crecy", "count": 14, "lat": 50.253, "lon": 1.886, "year": 1346, "note": "Edward III's overwhelming victory over Philip VI, August 26 1346", "eu": false, "r": 15.4, "cat": "battle", "icon": "⚔"}, {"name": "Calais", "count": 8, "lat": 50.951, "lon": 1.858, "year": 1347, "note": "Captured after an eleven-month siege and held by England for two centuries", "eu": false, "r": 13.3, "cat": "battle", "icon": "⚔"}, {"name": "Poitiers", "count": 5, "lat": 46.58, "lon": 0.34, "year": 1356, "note": "The Black Prince's victory and capture of King John II of France, September 1356", "eu": false, "r": 11.6, "cat": "battle", "icon": "⚔"}, {"name": "Bretigny", "count": 1, "lat": 48.45, "lon": 1.5, "year": 1360, "note": "Treaty ending the first phase of the Hundred Years War, 1360", "eu": false, "r": 7.0, "cat": "treaty", "icon": "▤"}, {"name": "Neville's Cross", "count": 2, "lat": 54.774, "lon": -1.59, "year": 1346, "note": "English victory over the invading Scots while Edward III besieged Calais, 1346", "eu": true, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Bordeaux", "count": 2, "lat": 44.8378, "lon": -0.5792, "year": 1294, "note": "Capital of English Gascony, besieged in Edward I's war with France, 1294", "eu": false, "r": 8.7, "cat": "port", "icon": "⚓"}, {"name": "Bayonne", "count": 1, "lat": 43.4933, "lon": -1.475, "year": 1294, "note": "Gascon port town caught up in the maritime quarrels that sparked Edward I's French war", "eu": false, "r": 7.0, "cat": "port", "icon": "⚓"}, {"name": "Saintes", "count": 1, "lat": 45.746, "lon": -0.633, "year": 1242, "note": "Louis IX defeated Henry III nearby, ending his last bid to recover the lost Angevin lands", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Boulogne", "count": 2, "lat": 50.726, "lon": 1.614, "year": 1216, "note": "Channel port associated with Prince Louis of France's invasion of England", "eu": false, "r": 8.7, "cat": "port", "icon": "⚓"}, {"name": "St. Valery", "count": 2, "lat": 50.183, "lon": 1.622, "year": 1066, "note": "William the Conqueror's invasion fleet mustered here at the mouth of the Somme", "eu": false, "r": 8.7, "cat": "port", "icon": "⚓"}, {"name": "Jerusalem", "count": 12, "lat": 31.7711, "lon": 35.2178, "year": 1099, "note": "Captured by the First Crusade, July 1099; retaken by Saladin, 1187", "eu": false, "r": 14.8, "cat": "crusade", "icon": "⊕"}, {"name": "Antioch", "count": 3, "lat": 36.2021, "lon": 36.1603, "year": 1098, "note": "Great Crusader fortress city besieged and captured by the First Crusade, 1098", "eu": false, "r": 9.9, "cat": "crusade", "icon": "⊕"}, {"name": "Constantinople", "count": 3, "lat": 41.0082, "lon": 28.9784, "year": 1097, "note": "Byzantine capital where the armies of the First and Third Crusades gathered", "eu": false, "r": 9.9, "cat": "capital", "icon": "★"}, {"name": "Acre", "count": 6, "lat": 32.9234, "lon": 35.07, "year": 1191, "note": "Captured by Richard I after a two-year siege during the Third Crusade, 1191", "eu": false, "r": 12.2, "cat": "crusade", "icon": "⊕"}, {"name": "Cyprus", "count": 3, "lat": 35.1264, "lon": 33.4299, "year": 1191, "note": "Conquered by Richard I en route to the Holy Land, 1191", "eu": false, "r": 9.9, "cat": "crusade", "icon": "⊕"}, {"name": "Tyre", "count": 2, "lat": 33.2704, "lon": 35.196, "year": 1187, "note": "Last Crusader stronghold to hold out against Saladin after the disaster at Hattin", "eu": false, "r": 8.7, "cat": "crusade", "icon": "⊕"}, {"name": "Jaffa", "count": 1, "lat": 32.0544, "lon": 34.7519, "year": 1192, "note": "Richard I's victory here secured the coastal road towards Jerusalem", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Hattin", "count": 1, "lat": 32.807, "lon": 35.446, "year": 1187, "note": "Saladin's catastrophic defeat of the Crusader army, precipitating the loss of Jerusalem", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Ascalon", "count": 1, "lat": 31.6693, "lon": 34.5749, "year": 1153, "note": "Fortress city fought over between Crusaders and the Egyptians", "eu": false, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Damascus", "count": 1, "lat": 33.5138, "lon": 36.2765, "year": 1174, "note": "Saladin's power base in Syria, from which he united the Muslim world against the Crusaders", "eu": false, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Tripoli", "count": 1, "lat": 34.4361, "lon": 35.8497, "year": 1109, "note": "Crusader county on the Syrian coast", "eu": false, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Egypt", "count": 3, "lat": 30.0444, "lon": 31.2357, "year": 1169, "note": "Saladin's base of power, uniting the Muslim world against the Crusader states", "eu": false, "r": 9.9, "cat": "crusade", "icon": "⊕"}, {"name": "Sicily", "count": 8, "lat": 38.1157, "lon": 13.3615, "year": 1190, "note": "Kingdom where Richard I wintered on his way to the Third Crusade, 1190", "eu": false, "r": 13.3, "cat": "territory", "icon": ""}, {"name": "Messina", "count": 1, "lat": 38.1938, "lon": 15.554, "year": 1190, "note": "Sicilian port where Richard I's crusading fleet wintered", "eu": false, "r": 7.0, "cat": "port", "icon": "⚓"}, {"name": "Asia Minor", "count": 5, "lat": 38.5, "lon": 32.5, "year": 1097, "note": "Crossed at heavy cost by the armies of the First and Third Crusades", "eu": false, "r": 11.6, "cat": "crusade", "icon": "⊕"}, {"name": "Hungary", "count": 2, "lat": 47.4979, "lon": 19.0402, "year": 1189, "note": "Crossed by Frederick Barbarossa's German army en route to the Third Crusade", "eu": false, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Austria", "count": 2, "lat": 48.2082, "lon": 16.3738, "year": 1192, "note": "Duke Leopold captured and imprisoned Richard I here on his return from Crusade, 1192", "eu": false, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Regensburg", "count": 1, "lat": 49.0134, "lon": 12.1016, "year": 1189, "note": "Starting point of Frederick Barbarossa's German Crusader host, 1189", "eu": false, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Warwick", "count": 2, "lat": 52.2823, "lon": -1.5849, "year": 1312, "note": "Piers Gaveston beheaded on Blacklow Hill nearby, 1312; also the seat of the Earls of Warwick", "eu": true, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Norfolk", "count": 1, "lat": 52.7, "lon": 1.0, "year": 1330, "note": "Castle Rising, where Queen Isabella was kept in comfortable confinement after Mortimer's fall, 1330", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Leicester", "count": 1, "lat": 52.6369, "lon": -1.1398, "year": 1239, "note": "Earldom inherited by Simon de Montfort, 1239", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Derby", "count": 1, "lat": 52.9225, "lon": -1.4746, "year": 1190, "note": "one of the shires held directly by Prince John before his accession", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Pembroke", "count": 4, "lat": 51.6741, "lon": -4.9152, "year": 1170, "note": "Strongbow's earldom, launch-point of the Anglo-Norman invasion of Ireland, 1169; later held by Aymer de Valence, opponent of Piers Gaveston", "eu": true, "r": 10.8, "cat": "crusade", "icon": "⊕"}, {"name": "Cornwall", "count": 2, "lat": 50.4, "lon": -4.7, "year": 1257, "note": "one of the shires held by Prince John; later the earldom of Richard of Cornwall, briefly King of the Romans", "eu": true, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Lancaster", "count": 11, "lat": 54.0466, "lon": -2.8007, "year": 1322, "note": "earldom and later duchy at the centre of baronial opposition under Thomas and Henry of Lancaster, then raised to a Duchy for John of Gaunt", "eu": true, "r": 14.5, "cat": "revolution", "icon": "✳"}, {"name": "Surrey", "count": 1, "lat": 51.2, "lon": -0.4, "year": 1297, "note": "earldom of the Warenne family; the Earl of Surrey commanded Edward I's army defeated at Stirling Bridge", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Nottingham", "count": 2, "lat": 52.9548, "lon": -1.1581, "year": 1330, "note": "one of Prince John's shires; also where Parliament sat in 1330 when Mortimer and Isabella were seized", "eu": true, "r": 8.7, "cat": "treaty", "icon": "▤"}, {"name": "Devon", "count": 1, "lat": 50.7, "lon": -3.7, "year": 1190, "note": "one of the shires held by Prince John before his accession", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Somerset", "count": 1, "lat": 51.1, "lon": -2.9, "year": 1190, "note": "one of the shires held by Prince John before his accession", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Dorset", "count": 1, "lat": 50.8, "lon": -2.4, "year": 1190, "note": "one of the shires held by Prince John before his accession", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Exeter", "count": 1, "lat": 50.7184, "lon": -3.5339, "year": 1075, "note": "cathedral see relocated here from Crediton as part of the post-Conquest reorganisation of the Church", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Crediton", "count": 1, "lat": 50.7901, "lon": -3.6534, "year": 1075, "note": "former cathedral see, relocated to Exeter after the Conquest", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Chichester", "count": 1, "lat": 50.8365, "lon": -0.7792, "year": 1075, "note": "cathedral see relocated here from Selsey", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Selsey", "count": 1, "lat": 50.7367, "lon": -0.7864, "year": 1075, "note": "former cathedral see, relocated to Chichester after the Conquest", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Bath", "count": 1, "lat": 51.3811, "lon": -2.359, "year": 1275, "note": "the Bishop of Bath and Wells, Edward I's chancellor Robert Burnell, held this see", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Wells", "count": 1, "lat": 51.209, "lon": -2.647, "year": 1275, "note": "paired see with Bath, held by Edward I's chancellor Robert Burnell", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Lichfield", "count": 1, "lat": 52.6825, "lon": -1.8299, "year": 1296, "note": "see held by Walter Langton, Edward I's Treasurer, as a reward for service", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Northampton", "count": 2, "lat": 52.2405, "lon": -0.9027, "year": 1328, "note": "the 1328 Treaty of Northampton, recognising Robert Bruce as King of Scots -- denounced at the time as the 'Shameful Treaty'", "eu": true, "r": 8.7, "cat": "treaty", "icon": "▤"}, {"name": "Bedford", "count": 1, "lat": 52.1362, "lon": -0.466, "year": 1224, "note": "Bedford Castle besieged and taken by Hubert de Burgh, 1224", "eu": true, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Berkeley Castle", "count": 2, "lat": 51.6907, "lon": -2.456, "year": 1327, "note": "Edward II imprisoned and murdered here, 1327", "eu": true, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Clarendon", "count": 4, "lat": 51.0587, "lon": -1.7448, "year": 1164, "note": "Henry II's 1164 Constitutions of Clarendon, asserting royal authority over the Church courts", "eu": true, "r": 10.8, "cat": "treaty", "icon": "▤"}, {"name": "Woodstock", "count": 1, "lat": 51.8464, "lon": -1.3538, "year": 1165, "note": "royal palace; setting of the romantic legend of Henry II and Fair Rosamund", "eu": true, "r": 7.0, "cat": "capital", "icon": "★"}, {"name": "Marlborough", "count": 1, "lat": 51.4306, "lon": -1.7304, "year": 1267, "note": "the 1267 Statute of Marlborough, re-enacting the chief reforms of the Provisions of Westminster", "eu": true, "r": 7.0, "cat": "treaty", "icon": "▤"}, {"name": "Lincolnshire", "count": 1, "lat": 53.2, "lon": -0.5, "year": 1200, "note": "site of a county-court judgment the Crown tried improperly to overturn by writ", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Boroughbridge", "count": 1, "lat": 54.0947, "lon": -1.3962, "year": 1322, "note": "Thomas of Lancaster's baronial army defeated here, 1322; he was captured and beheaded soon after", "eu": true, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Carnarvon", "count": 3, "lat": 53.139, "lon": -4.2762, "year": 1284, "note": "shired by Edward I; the future Edward II, first English Prince of Wales, was born in the castle here, 1284", "eu": true, "r": 9.9, "cat": "crusade", "icon": "⊕"}, {"name": "Merioneth", "count": 1, "lat": 52.8, "lon": -3.9, "year": 1284, "note": "one of the shires created in Edward I's settlement of conquered Wales", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Cardigan", "count": 1, "lat": 52.0833, "lon": -4.6631, "year": 1284, "note": "one of the shires created in Edward I's settlement of conquered Wales", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Carmarthen", "count": 1, "lat": 51.857, "lon": -4.311, "year": 1284, "note": "one of the shires created in Edward I's settlement of conquered Wales", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "South Wales", "count": 5, "lat": 51.65, "lon": -3.5, "year": 1277, "note": "Marcher lordships (Gloucester, Mortimer) and recurring Welsh unrest and rebellion here", "eu": true, "r": 11.6, "cat": "territory", "icon": ""}, {"name": "Severn", "count": 1, "lat": 52.2, "lon": -2.5, "year": 1265, "note": "the Severn valley, held by Edward and the Marcher barons against Simon de Montfort, 1265", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Tweed", "count": 3, "lat": 55.6, "lon": -2.2, "year": 1314, "note": "the Anglo-Scottish border river, crossed by English armies invading Scotland", "eu": true, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "New Forest", "count": 2, "lat": 50.86, "lon": -1.62, "year": 1100, "note": "William II (Rufus) killed here by an arrow while hunting, 1100", "eu": true, "r": 8.7, "cat": "battle", "icon": "⚔"}, {"name": "Isle of Man", "count": 1, "lat": 54.2361, "lon": -4.5481, "year": 1066, "note": "recruiting ground for Harald Hardrada's invasion fleet, 1066", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Hebrides", "count": 1, "lat": 57.5, "lon": -7.0, "year": 1266, "note": "part of the Norse-Gaelic 'Lord of the Isles' domain, ceded by Norway to Scotland by the Treaty of Perth, 1266", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Orkney", "count": 2, "lat": 59.0, "lon": -3.0, "year": 1066, "note": "mustering point for Harald Hardrada's invasion fleet, 1066; the book also notes Scotland's later (1468, so beyond this map's range) acquisition of Orkney and Shetland from Denmark as a royal dowry", "eu": true, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Bouvines", "count": 1, "lat": 50.583, "lon": 3.372, "year": 1214, "note": "Philip Augustus's decisive victory, which wrecked King John's continental coalition and hastened Magna Carta", "eu": false, "r": 7.0, "cat": "battle", "icon": "⚔"}, {"name": "Flanders", "count": 13, "lat": 51.0, "lon": 3.2, "year": 1340, "note": "county whose counts and cloth towns were pulled between French and English alliance throughout this period -- crucial to the wool trade and Edward III's early war strategy", "eu": false, "r": 15.1, "cat": "territory", "icon": ""}, {"name": "Avignon", "count": 1, "lat": 43.9493, "lon": 4.8055, "year": 1330, "note": "seat of the Papacy in exile under French influence during Edward III's reign", "eu": false, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Cologne", "count": 1, "lat": 50.9375, "lon": 6.9603, "year": 1096, "note": "starting point of the ill-fated peasant 'People's Crusade'", "eu": false, "r": 7.0, "cat": "crusade", "icon": "⊕"}, {"name": "Germany", "count": 12, "lat": 51.0, "lon": 10.0, "year": 1193, "note": "the Empire generally -- Crusader armies, Richard I's captivity there in 1192-93, and Angevin/Imperial diplomatic marriages", "eu": false, "r": 14.8, "cat": "territory", "icon": ""}, {"name": "Italy", "count": 7, "lat": 42.5, "lon": 12.5, "year": 1191, "note": "used generally of Crusader armies' passage and Papal/Imperial politics", "eu": false, "r": 12.8, "cat": "territory", "icon": ""}, {"name": "Syria", "count": 5, "lat": 35.0, "lon": 38.0, "year": 1187, "note": "the wider Crusader-states coastal region, alongside Palestine", "eu": false, "r": 11.6, "cat": "crusade", "icon": "⊕"}, {"name": "Palestine", "count": 4, "lat": 31.9, "lon": 35.2, "year": 1187, "note": "used for the wider Crusader-held region around Jerusalem, distinct from the city itself", "eu": false, "r": 10.8, "cat": "crusade", "icon": "⊕"}, {"name": "Loire", "count": 3, "lat": 47.4, "lon": 0.5, "year": 1203, "note": "river marking the southern edge of the Angevin heartlands, contested with the French Crown", "eu": false, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "Seine", "count": 3, "lat": 49.3, "lon": 1.2, "year": 1198, "note": "river guarded by Richard I's fortress at Château Gaillard near Andelys", "eu": false, "r": 9.9, "cat": "territory", "icon": ""}];
+var CAT_LABELS = {"capital": "capital / seat of power", "battle": "battle / siege", "treaty": "treaty / parliament / charter", "revolution": "revolt / uprising", "crusade": "crusade / conquest / religious flashpoint", "port": "naval base / port", "territory": "region / territory / duchy"};
+
+var map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://www.openhistoricalmap.org/map-styles/main/main.json',
+  center: [10, 44],
+  zoom: 3.1,
+  attributionControl: true
+});
+map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+var yearSlider = document.getElementById('yearslider');
+var yearVal = document.getElementById('yearval');
+var playBtn = document.getElementById('playbtn');
+var resetBtn = document.getElementById('resetbtn');
+var playing = null;
+
+map.once('styledata', function () {
+  map.filterByDate(yearSlider.value + '-06-01');
+});
+
+function applyYear(year) {
+  map.filterByDate(year + '-06-01');
+  Object.keys(markerObjs).forEach(function(name) {
+    var p = byName[name];
+    var el = markerEls[name];
+    el.classList.remove('current', 'future', 'past');
+    if (p.year > year) {
+      el.classList.add('future');
+    } else if (p.year === year) {
+      el.classList.add('current');
+    } else {
+      el.classList.add('past');
+    }
+  });
+}
+
+yearSlider.addEventListener('input', function () {
+  yearVal.textContent = yearSlider.value;
+  applyYear(parseInt(yearSlider.value, 10));
+});
+
+playBtn.addEventListener('click', function() {
+  if (playing) {
+    clearInterval(playing);
+    playing = null;
+    playBtn.textContent = '▶ Play';
+    return;
+  }
+  playBtn.textContent = '⏸ Pause';
+  playing = setInterval(function() {
+    var y = parseInt(yearSlider.value, 10) + 2;
+    if (y > 1400) {
+      clearInterval(playing);
+      playing = null;
+      playBtn.textContent = '▶ Play';
+      return;
+    }
+    yearSlider.value = y;
+    yearVal.textContent = y;
+    applyYear(y);
+  }, 90);
+});
+
+resetBtn.addEventListener('click', function() {
+  if (playing) { clearInterval(playing); playing = null; playBtn.textContent = '▶ Play'; }
+  yearSlider.value = 1000;
+  yearVal.textContent = 1000;
+  applyYear(1000);
+});
+
+var byName = {};
+var markerObjs = {};
+var markerEls = {};
+
+map.on('load', function() {
+  places.forEach(function(p) {
+    byName[p.name] = p;
+
+    var wrap = document.createElement('div');
+    wrap.className = 'place-marker-wrap';
+    var d = Math.max(p.r * 2, 8);
+    wrap.style.width = d + 'px';
+    wrap.style.height = d + 'px';
+
+    var el = document.createElement('div');
+    el.className = 'place-marker' + (p.eu ? '' : ' noneu');
+    el.style.width = (p.r * 2) + 'px';
+    el.style.height = (p.r * 2) + 'px';
+    if (p.icon) {
+      var fontSize = Math.max(8, Math.min(20, p.r * 0.95));
+      el.style.fontSize = fontSize + 'px';
+      el.textContent = p.icon;
+    }
+    wrap.appendChild(el);
+
+    // exact-location pin: small fixed-size dot at the true coordinate, so the precise
+    // point stays visible even when the count-scaled circle around it is large
+    var pin = document.createElement('div');
+    pin.className = 'place-pin';
+    pin.title = p.name + ' — exact location';
+    wrap.appendChild(pin);
+
+    var catLabel = CAT_LABELS[p.cat] || '';
+    var popupHtml = '<b>' + p.name + '</b> (' + p.year + ')<br><span class="poptag">' + catLabel + '</span><br>' +
+      p.count + ' mention' + (p.count === 1 ? '' : 's') +
+      (p.note ? '<br><i>' + p.note + '</i>' : '');
+    var popup = new maplibregl.Popup({ offset: p.r + 4 }).setHTML(popupHtml);
+
+    var marker = new maplibregl.Marker({ element: wrap })
+      .setLngLat([p.lon, p.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    wrap.addEventListener('click', function() { showDetail(p.name); });
+    markerObjs[p.name] = marker;
+    markerEls[p.name] = wrap;
+  });
+  applyYear(1000);
+});
+
+var rows = [];
+var detail = document.getElementById('detail');
+var search = document.getElementById('search');
+var listEl = document.getElementById('list');
+
+// Build the sidebar list directly from `places` (sorted by count desc) so it can
+// never drift out of sync with the map markers if new places are added later.
+var ICON_ESC = {"★":"&#9733;","⚔":"&#9876;","▤":"&#9636;","✳":"&#10035;","⊕":"&#8853;","⚓":"&#9875;","":""};
+var sortedPlaces = places.slice().sort(function(a, b) { return b.count - a.count; });
+sortedPlaces.forEach(function(p) {
+  var row = document.createElement('div');
+  row.className = 'row' + (p.eu ? '' : ' noneu');
+  row.setAttribute('data-name', p.name);
+  var icon = ICON_ESC[p.icon] !== undefined ? ICON_ESC[p.icon] : p.icon;
+  row.innerHTML = '<span class="rowicon">' + (icon || '') + '</span>' +
+    '<span class="rowname">' + p.name + '</span>' +
+    '<span class="rowyear">' + p.year + '</span>' +
+    '<span class="rowcount">' + p.count + '</span>';
+  row.addEventListener('click', function() { showDetail(p.name); });
+  listEl.appendChild(row);
+  rows.push(row);
+});
+
+function showDetail(name) {
+  var p = byName[name];
+  if (!p) return;
+  var catLabel = CAT_LABELS[p.cat] || '';
+  detail.innerHTML = '<div class="name">' + p.name + '</div>' +
+    '<div><span class="year">' + p.year + '</span> — ' + p.count + ' mention' + (p.count === 1 ? '' : 's') +
+    (p.eu ? '' : ' <i>(outside the British Isles)</i>') + '</div>' +
+    '<div class="cat">' + catLabel + '</div>' +
+    (p.note ? '<div class="note">' + p.note + '</div>' : '');
+  rows.forEach(function(r) { r.classList.toggle('active', r.getAttribute('data-name') === name); });
+  var m = markerObjs[name];
+  if (m) {
+    map.flyTo({ center: m.getLngLat(), zoom: Math.max(map.getZoom(), 5) });
+    m.togglePopup();
+  }
+}
+
+search.addEventListener('input', function() {
+  var q = search.value.trim().toLowerCase();
+  rows.forEach(function(r) {
+    var name = r.getAttribute('data-name').toLowerCase();
+    r.style.display = name.indexOf(q) === -1 ? 'none' : 'flex';
+  });
+});
+</script>
+</body>
+</html>

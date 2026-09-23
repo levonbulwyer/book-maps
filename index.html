@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Book Maps &mdash; Levon's Reading Atlas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #2b2620; background: #fff7ec;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 36px 20px 60px; }
+  h1 { font-size: 1.6em; margin: 0 0 6px 0; font-weight: 700; }
+  .subtitle { font-size: 0.95em; color: #756f66; margin: 0 0 32px 0; line-height:1.5; max-width: 56ch; }
+  .grid { display: flex; flex-direction: column; gap: 14px; }
+  a.card {
+    display: block; text-decoration: none; color: inherit;
+    background: #ffffff; border: 1px solid #e3ddd0; border-radius: 12px;
+    padding: 16px 18px; transition: border-color 0.15s, transform 0.15s;
+  }
+  a.card:hover { border-color: #a1362c; transform: translateY(-1px); }
+  .card .book { font-size: 0.72em; letter-spacing: 0.05em; text-transform: uppercase; color: #a1362c; font-weight: 700; margin-bottom: 4px; }
+  .card .title { font-size: 1.08em; font-weight: 600; margin-bottom: 4px; }
+  .card .meta { font-size: 0.82em; color: #8b8478; }
+  footer { margin-top: 40px; font-size: 0.78em; color: #a89f8f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Book Maps</h1>
+  <p class="subtitle">Every place named in the books I'm editing, plotted on a historical basemap &mdash; one interactive map per book, built up chapter by chapter as each is annotated.</p>
+  <div class="grid">
+    <a class="card" href="braudel.html">
+      <div class="book">Fernand Braudel</div>
+      <div class="title">Civilization and Capitalism, Vol. I</div>
+      <div class="meta">Chapter 1 of 9 logged &middot; 236 places</div>
+    </a>
+    <a class="card" href="churchill.html">
+      <div class="book">Winston Churchill</div>
+      <div class="title">A History of the English-Speaking Peoples, Vol. I</div>
+      <div class="meta">Britain, France &amp; the Crusading World &middot; Ch. 9&ndash;22</div>
+    </a>
+    <a class="card" href="bloch-feudal-society.html">
+      <div class="book">Marc Bloch</div>
+      <div class="title">Feudal Society</div>
+      <div class="meta">Places in the West &middot; Parts I&ndash;III, Ch. I&ndash;X</div>
+    </a>
+    <a class="card" href="hill-century-of-revolution.html">
+      <div class="book">Christopher Hill</div>
+      <div class="title">The Century of Revolution</div>
+      <div class="meta">Places in the World</div>
+    </a>
+    <a class="card" href="taylor-struggle-for-mastery.html">
+      <div class="book">A.J.P. Taylor</div>
+      <div class="title">The Struggle for Mastery in Europe, 1848&ndash;1918</div>
+      <div class="meta">Places in Europe</div>
+    </a>
+  </div>
+  <footer>Updated as each book's chapters are edited. Open any map above &mdash; works on phone or desktop.</footer>
+</div>
+</body>
+</html>

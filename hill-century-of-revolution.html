@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Places in the World — The Century of Revolution (Christopher Hill)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+<script src="https://unpkg.com/@openhistoricalmap/maplibre-gl-dates/index.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #2b2620; background: #fff;
+  }
+  #app { display: flex; height: 100vh; }
+  #map { flex: 1 1 auto; height: 100%; }
+  #sidebar {
+    width: 320px; flex: 0 0 320px; border-left: 1px solid #e3ddd0; padding: 14px;
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  h1 { font-size: 1.05em; margin: 0 0 4px 0; font-weight: 600; }
+  .subtitle { font-size: 0.8em; color: #756f66; margin: 0 0 12px 0; line-height:1.4; }
+  .stat {
+    background: #f7f4ee; border: 1px solid #e3ddd0; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.85em; margin-bottom: 10px;
+  }
+  .stat b { font-size: 1.3em; display:block; color:#a1362c; }
+  input[type=search] {
+    width: 100%; padding: 6px 8px; border: 1px solid #d8d1c2; border-radius: 6px;
+    font-size: 0.85em; margin-bottom: 8px;
+  }
+  .list { flex: 1 1 auto; overflow-y: auto; border: 1px solid #e3ddd0; border-radius: 8px; min-height: 100px; }
+  .row {
+    display: flex; justify-content: space-between; padding: 5px 10px;
+    font-size: 0.82em; border-bottom: 1px solid #efeae0; cursor: pointer;
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover, .row.active { background: #f2ece0; }
+  .rowcount { color: #a1362c; font-weight: 600; }
+  .detail {
+    margin-top: 10px; padding: 10px 12px; background: #f7f4ee; border: 1px solid #e3ddd0;
+    border-radius: 8px; font-size: 0.85em; min-height: 50px;
+  }
+  .detail .name { font-weight: 600; margin-bottom: 3px; }
+  .detail .note { color: #6b655c; margin-top: 4px; }
+  .place-marker-wrap {
+    position: relative;
+    cursor: pointer;
+  }
+  .place-marker {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(161,54,44,0.68);
+    border: 2px solid #300d0a;
+  }
+  .place-pin {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #2b1210;
+    border: 1px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+    z-index: 2;
+  }
+  .maplibregl-popup {
+    filter: drop-shadow(0 2px 4px rgba(43,38,32,0.45));
+  }
+  .maplibregl-popup-content {
+    border: 1.5px solid rgba(43,38,32,0.3);
+    border-radius: 10px;
+  }
+  .maplibregl-popup-content b { color: #a1362c; }
+  .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+    border-bottom-color: #2b2620;
+  }
+  .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+    border-top-color: #2b2620;
+  }
+  .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    border-right-color: #2b2620;
+  }
+  .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    border-left-color: #2b2620;
+  }
+  .yearbox {
+    background: #f7f4ee; border: 1px solid #e3ddd0; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.85em; margin-bottom: 10px;
+  }
+  .yearbox .yearrow { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .yearbox .yearval { font-size: 1.3em; font-weight: 700; color: #a1362c; }
+  .yearbox input[type=range] { width: 100%; }
+  .yearbox .yearends { display: flex; justify-content: space-between; font-size: 0.72em; color: #8b8478; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <div id="sidebar">
+    <h1>Places in the World</h1>
+    <p class="subtitle">The Century of Revolution 1603–1714, Christopher Hill. Every place named in the book — England and the rest of the British Isles, plus the colonies, Europe, and beyond. Base map: OpenHistoricalMap ("Historic" style), filtered to the year below — pan and zoom freely. Each place has a small dark pin at its exact coordinate, inside a translucent circle sized by mention count.</p>
+    <div class="yearbox">
+      <div class="yearrow"><span>Map shows:</span><span class="yearval" id="yearval">1660</span></div>
+      <input type="range" id="yearslider" min="1603" max="1714" value="1660" step="1">
+      <div class="yearends"><span>1603</span><span>1714</span></div>
+    </div>
+    <div class="stat"><b>961</b>total place-mentions, 159 distinct places</div>
+    <input type="search" id="search" placeholder="Filter places…">
+    <div class="list" id="list"></div>
+    <div class="detail" id="detail">Click a place, on the map or in the list, to see details.</div>
+  </div>
+</div>
+
+<script>
+var places = [{"name": "London", "count": 190, "lat": 51.5074, "lon": -0.1278, "note": "capital; overwhelmingly the most-referenced place in the book", "r": 26.1}, {"name": "Oxford", "count": 33, "lat": 51.752, "lon": -1.2577, "note": "royalist wartime capital; university", "r": 18.8}, {"name": "Cambridge", "count": 16, "lat": 52.2053, "lon": 0.1218, "note": "university town", "r": 15.9}, {"name": "Lancashire", "count": 12, "lat": 53.8, "lon": -2.7, "note": "county", "r": 14.8}, {"name": "Bristol", "count": 11, "lat": 51.4545, "lon": -2.5879, "note": "major west-country port", "r": 14.4}, {"name": "Whitehall", "count": 10, "lat": 51.5035, "lon": -0.1276, "note": "royal palace / seat of government", "r": 14.1}, {"name": "Putney", "count": 9, "lat": 51.462, "lon": -0.2148, "note": "the 1647 Army Council 'Putney Debates'", "r": 13.7}, {"name": "Yorkshire", "count": 9, "lat": 54.0, "lon": -1.5, "note": "county", "r": 13.7}, {"name": "Westminster", "count": 8, "lat": 51.4995, "lon": -0.1357, "note": "Parliament / seat of government", "r": 13.2}, {"name": "Exeter", "count": 8, "lat": 50.7184, "lon": -3.5339, "note": "west-country port", "r": 13.2}, {"name": "Liverpool", "count": 7, "lat": 53.4084, "lon": -2.9916, "note": "rising west-coast port", "r": 12.7}, {"name": "Preston", "count": 7, "lat": 53.7632, "lon": -2.7031, "note": "1648 and 1715 battles", "r": 12.7}, {"name": "Newcastle", "count": 6, "lat": 54.9783, "lon": -1.6178, "note": "coal trade; adjusted down -- most mentions of 'Newcastle' in the book are the Duke/Duchess/Marquis of Newcastle, a person, not the town", "r": 12.2}, {"name": "Worcester", "count": 6, "lat": 52.1936, "lon": -2.2216, "note": "1651 battle", "r": 12.2}, {"name": "Hull", "count": 5, "lat": 53.7457, "lon": -0.3367, "note": "1642 refusal to admit the King", "r": 11.5}, {"name": "Birmingham", "count": 5, "lat": 52.4862, "lon": -1.8904, "note": "rising industrial town", "r": 11.5}, {"name": "Shrewsbury", "count": 5, "lat": 52.7069, "lon": -2.7527, "note": "royalist stronghold", "r": 11.5}, {"name": "Rye House", "count": 5, "lat": 51.767, "lon": -0.008, "note": "1683 Rye House Plot; adjusted -- these are 'Rye House', Hertfordshire, not the Sussex town of Rye", "r": 11.5}, {"name": "Devon", "count": 5, "lat": 50.7, "lon": -3.7, "note": "county", "r": 11.5}, {"name": "Wiltshire", "count": 5, "lat": 51.3, "lon": -1.9, "note": "county", "r": 11.5}, {"name": "Buckinghamshire", "count": 5, "lat": 51.81, "lon": -0.81, "note": "county", "r": 11.5}, {"name": "Chester", "count": 4, "lat": 53.1934, "lon": -2.8931, "note": "", "r": 10.8}, {"name": "Nottingham", "count": 4, "lat": 52.9548, "lon": -1.1581, "note": "Charles I raised his standard here, 1642", "r": 10.8}, {"name": "Canterbury", "count": 4, "lat": 51.2802, "lon": 1.0789, "note": "seat of the Archbishop", "r": 10.8}, {"name": "Dover", "count": 4, "lat": 51.1279, "lon": 1.3134, "note": "", "r": 10.8}, {"name": "Leeds", "count": 4, "lat": 53.8008, "lon": -1.5491, "note": "", "r": 10.8}, {"name": "Newbury", "count": 4, "lat": 51.4014, "lon": -1.3225, "note": "two Civil War battles", "r": 10.8}, {"name": "Burford", "count": 4, "lat": 51.809, "lon": -1.636, "note": "1649 Leveller mutiny suppressed here", "r": 10.8}, {"name": "Severn (river)", "count": 4, "lat": 52.2, "lon": -2.5, "note": "", "r": 10.8}, {"name": "the Fens", "count": 4, "lat": 52.6, "lon": 0.0, "note": "region", "r": 10.8}, {"name": "Cheshire", "count": 4, "lat": 53.17, "lon": -2.55, "note": "county", "r": 10.8}, {"name": "Durham", "count": 4, "lat": 54.77, "lon": -1.57, "note": "county", "r": 10.8}, {"name": "Gloucestershire", "count": 4, "lat": 51.86, "lon": -2.24, "note": "county", "r": 10.8}, {"name": "Kent", "count": 4, "lat": 51.25, "lon": 0.67, "note": "county", "r": 10.8}, {"name": "Sussex", "count": 4, "lat": 50.9, "lon": -0.3, "note": "county", "r": 10.8}, {"name": "Colchester", "count": 3, "lat": 51.8892, "lon": 0.9032, "note": "1648 siege", "r": 9.8}, {"name": "Naseby", "count": 3, "lat": 52.391, "lon": -0.9973, "note": "decisive 1645 battle", "r": 9.8}, {"name": "Hampton Court", "count": 3, "lat": 51.4036, "lon": -0.3366, "note": "", "r": 9.8}, {"name": "Sedgemoor", "count": 4, "lat": 51.09, "lon": -2.95, "note": "1685 Monmouth's rebellion crushed here; also referenced as marshland drained for farming (one instance uses the period spelling 'Sedgmoor')", "r": 10.8}, {"name": "Tower of London", "count": 3, "lat": 51.5081, "lon": -0.0759, "note": "", "r": 9.8}, {"name": "St Paul's", "count": 3, "lat": 51.5138, "lon": -0.0984, "note": "", "r": 9.8}, {"name": "Bedford", "count": 3, "lat": 52.1362, "lon": -0.466, "note": "Bunyan's imprisonment", "r": 9.8}, {"name": "Thames (river)", "count": 3, "lat": 51.458, "lon": -0.97, "note": "", "r": 9.8}, {"name": "Cornwall", "count": 3, "lat": 50.4, "lon": -4.5, "note": "county", "r": 9.8}, {"name": "Middlesex", "count": 3, "lat": 51.55, "lon": -0.35, "note": "county", "r": 9.8}, {"name": "Staffordshire", "count": 3, "lat": 52.8, "lon": -2.0, "note": "county", "r": 9.8}, {"name": "Suffolk", "count": 3, "lat": 52.2, "lon": 1.0, "note": "adjusted down -- most 'Suffolk' mentions are the Earl of Suffolk, a person", "r": 9.8}, {"name": "York", "count": 3, "lat": 53.96, "lon": -1.0873, "note": "adjusted down -- most 'York' mentions in the book are the Duke/Duchess of York (the future James II), not the city; excludes ~7 references to 'New York' in colonial America", "r": 9.8}, {"name": "Manchester", "count": 2, "lat": 53.4808, "lon": -2.2426, "note": "adjusted down -- most mentions are the Earl of Manchester, a person", "r": 8.6}, {"name": "Plymouth", "count": 2, "lat": 50.3755, "lon": -4.1427, "note": "", "r": 8.6}, {"name": "Southampton", "count": 2, "lat": 50.9097, "lon": -1.4044, "note": "", "r": 8.6}, {"name": "Edgehill", "count": 2, "lat": 52.1167, "lon": -1.4667, "note": "first battle of the Civil War, 1642", "r": 8.6}, {"name": "Turnham Green", "count": 2, "lat": 51.494, "lon": -0.254, "note": "1642, checked Charles's advance on London", "r": 8.6}, {"name": "Marston Moor", "count": 2, "lat": 53.9575, "lon": -1.3128, "note": "1644 battle", "r": 8.6}, {"name": "Isle of Wight", "count": 2, "lat": 50.6936, "lon": -1.3047, "note": "Charles I's captivity at Carisbrooke", "r": 8.6}, {"name": "the Midlands", "count": 2, "lat": 52.5, "lon": -1.8, "note": "region", "r": 8.6}, {"name": "Warwickshire", "count": 2, "lat": 52.3, "lon": -1.5, "note": "county", "r": 8.6}, {"name": "Worcestershire", "count": 2, "lat": 52.2, "lon": -2.2, "note": "county", "r": 8.6}, {"name": "Cumberland", "count": 2, "lat": 54.65, "lon": -3.0, "note": "county", "r": 8.6}, {"name": "Northumberland", "count": 2, "lat": 55.2, "lon": -2.0, "note": "county", "r": 8.6}, {"name": "Winchester", "count": 1, "lat": 51.0632, "lon": -1.308, "note": "adjusted down -- most mentions are the Marquis of Winchester, a person", "r": 6.9}, {"name": "Portsmouth", "count": 1, "lat": 50.8198, "lon": -1.088, "note": "adjusted down -- the other mention is the Duchess of Portsmouth, a person", "r": 6.9}, {"name": "Norwich", "count": 1, "lat": 52.6309, "lon": 1.2974, "note": "", "r": 6.9}, {"name": "Peterborough", "count": 1, "lat": 52.5695, "lon": -0.2405, "note": "", "r": 6.9}, {"name": "Hertford", "count": 1, "lat": 51.7975, "lon": -0.0786, "note": "", "r": 6.9}, {"name": "Stratford-on-Avon", "count": 1, "lat": 52.1917, "lon": -1.7073, "note": "", "r": 6.9}, {"name": "Wakefield", "count": 1, "lat": 53.6833, "lon": -1.4977, "note": "", "r": 6.9}, {"name": "Berwick", "count": 1, "lat": 55.7715, "lon": -2.0011, "note": "1639 Treaty of Berwick", "r": 6.9}, {"name": "Carlisle", "count": 1, "lat": 54.8951, "lon": -2.9382, "note": "", "r": 6.9}, {"name": "Truro", "count": 1, "lat": 50.2632, "lon": -5.051, "note": "", "r": 6.9}, {"name": "Lostwithiel", "count": 1, "lat": 50.4079, "lon": -4.6668, "note": "1644, Essex's army surrendered here", "r": 6.9}, {"name": "Ripon", "count": 1, "lat": 54.1359, "lon": -1.523, "note": "1640 Treaty of Ripon", "r": 6.9}, {"name": "Newport (Isle of Wight)", "count": 1, "lat": 50.7, "lon": -1.29, "note": "1648 Treaty of Newport", "r": 6.9}, {"name": "Beachy Head", "count": 1, "lat": 50.7429, "lon": 0.2452, "note": "1690 naval battle", "r": 6.9}, {"name": "Torbay", "count": 1, "lat": 50.4619, "lon": -3.5278, "note": "William of Orange's 1688 landing", "r": 6.9}, {"name": "Greenwich", "count": 1, "lat": 51.4826, "lon": -0.0077, "note": "", "r": 6.9}, {"name": "Leicester", "count": 1, "lat": 52.6369, "lon": -1.1398, "note": "", "r": 6.9}, {"name": "Ludlow Castle", "count": 1, "lat": 52.3697, "lon": -2.7159, "note": "site of Milton's masque Comus; adjusted down -- most other mentions are the regicide Edmund Ludlow, a person", "r": 6.9}, {"name": "Derbyshire", "count": 1, "lat": 53.1, "lon": -1.5, "note": "county", "r": 6.9}, {"name": "Dorset", "count": 1, "lat": 50.75, "lon": -2.4, "note": "county", "r": 6.9}, {"name": "Hertfordshire", "count": 1, "lat": 51.8, "lon": -0.24, "note": "county", "r": 6.9}, {"name": "Norfolk", "count": 1, "lat": 52.7, "lon": 1.0, "note": "county", "r": 6.9}, {"name": "Northamptonshire", "count": 1, "lat": 52.3, "lon": -0.9, "note": "county", "r": 6.9}, {"name": "Nottinghamshire", "count": 1, "lat": 53.1, "lon": -1.0, "note": "county", "r": 6.9}, {"name": "Essex (county)", "count": 1, "lat": 51.75, "lon": 0.5, "note": "adjusted down -- most 'Essex' mentions are the Earl(s) of Essex, a person", "r": 6.9}, {"name": "Medway (river)", "count": 4, "lat": 51.38, "lon": 0.55, "note": "1667: the Dutch fleet sailed up the Medway and destroyed English ships at anchor -- a major shock to national confidence", "r": 10.8}, {"name": "Bradford", "count": 2, "lat": 53.796, "lon": -1.7594, "note": "Yorkshire clothing town", "r": 8.6}, {"name": "Maldon", "count": 1, "lat": 51.7306, "lon": 0.6829, "note": "Essex borough, cited for repeated charter changes", "r": 6.9}, {"name": "Stafford", "count": 1, "lat": 52.8062, "lon": -2.117, "note": "town (distinct from the county mention)", "r": 6.9}, {"name": "Windsor Castle", "count": 1, "lat": 51.4839, "lon": -0.6044, "note": "", "r": 6.9}, {"name": "Hounslow Heath", "count": 2, "lat": 51.4614, "lon": -0.4085, "note": "James II's army camp, used to overawe the City of London", "r": 8.6}, {"name": "Keswick", "count": 1, "lat": 54.6013, "lon": -3.1359, "note": "Cumberland; a large-scale copper-smelting works here employed 4,000 men on the eve of the Civil War", "r": 6.9}, {"name": "Cotswolds", "count": 1, "lat": 51.8, "lon": -1.8, "note": "region; cited among areas of forest clearance for fuel/cultivable land before the Civil War", "r": 6.9}, {"name": "Chilterns", "count": 1, "lat": 51.65, "lon": -0.75, "note": "region; cited among areas of forest clearance for fuel/cultivable land before the Civil War", "r": 6.9}, {"name": "Gloucester", "count": 5, "lat": 51.8642, "lon": -2.238, "note": "1643 siege; relieved by Parliamentarian forces marching from London, a turning point in the Civil War's first year", "r": 11.6}, {"name": "Halifax", "count": 1, "lat": 53.7248, "lon": -1.8656, "note": "Yorkshire clothing town, named alongside Leeds and Bradford; adjusted down -- most other 'Halifax' mentions are the Marquis of Halifax, George Savile, a person", "r": 7.0}, {"name": "Newmarket", "count": 1, "lat": 52.2446, "lon": 0.4049, "note": "royal racing/hunting seat associated with Charles II", "r": 7.0}, {"name": "Basing House", "count": 2, "lat": 51.2649, "lon": -1.0393, "note": "Marquis of Winchester's fortified mansion, besieged and destroyed by Parliamentarian forces", "r": 8.7}, {"name": "Wigan", "count": 1, "lat": 53.545, "lon": -2.6318, "note": "Lancashire corporate town, cited alongside Preston as long opposed to the growth of rural cloth manufacture", "r": 7.0}, {"name": "Tyneside", "count": 1, "lat": 54.97, "lon": -1.6, "note": "the Newcastle-upon-Tyne coalfield district; cited for plague deaths in 1636 (Appendix D)", "r": 7.0}, {"name": "Lincoln", "count": 2, "lat": 53.2307, "lon": -0.5406, "note": "cathedral city; referenced via the Bishop of Lincoln's extensive patronage of livings", "r": 8.7}, {"name": "Scotland", "count": 40, "lat": 56.8, "lon": -4.2, "note": "the kingdom generally -- the Bishops' Wars, the Covenant, and the Restoration/Revolution settlements there run through the whole book", "r": 19.6}, {"name": "Dunbar", "count": 2, "lat": 55.9992, "lon": -2.5099, "note": "Cromwell's decisive 1650 victory over the Scottish army", "r": 8.7}, {"name": "the Scottish Highlands", "count": 1, "lat": 57.2, "lon": -4.5, "note": "noted as excluded, with Catholic Ireland, from the growing unity focused on London", "r": 7.0}, {"name": "the Scottish Lowlands", "count": 2, "lat": 55.8, "lon": -3.8, "note": "contrasted with the Highlands; secured within the sphere of English civilisation after 1651, and again after the 1707 Union", "r": 8.7}, {"name": "Ireland", "count": 42, "lat": 53.4, "lon": -8.0, "note": "the whole country -- Cromwell's conquest, the land settlement, and the Restoration/Revolution recur throughout", "r": 19.8}, {"name": "Drogheda", "count": 1, "lat": 53.7189, "lon": -6.3478, "note": "stormed by Cromwell in 1649; garrison massacred", "r": 7.0}, {"name": "Dublin", "count": 1, "lat": 53.3498, "lon": -6.2603, "note": "James II's 1689 'Patriot Parliament' restored confiscated estates to Irish landowners here", "r": 7.0}, {"name": "Connaught", "count": 1, "lat": 53.85, "lon": -9.0, "note": "province to which transplantation of the Irish population was intended (never fully carried out)", "r": 7.0}, {"name": "Londonderry", "count": 5, "lat": 54.9966, "lon": -7.3086, "note": "City of London's Ulster plantation venture, later revoked; also besieged for three months in 1689", "r": 11.6}, {"name": "the Boyne", "count": 2, "lat": 53.7061, "lon": -6.4483, "note": "William III's decisive 1690 victory over James II", "r": 8.7}, {"name": "Wales", "count": 15, "lat": 52.3, "lon": -3.8, "note": "the principality generally -- its Council in the Marches, religious/educational conditions, and Royalist strongholds in the Civil War", "r": 15.7}, {"name": "France", "count": 57, "lat": 46.6, "lon": 2.2, "note": "the kingdom generally -- diplomatic, dynastic, and commercial rivalry with France runs through the whole book", "r": 21.0}, {"name": "Spain", "count": 55, "lat": 40.0, "lon": -4.0, "note": "the kingdom/empire generally", "r": 20.9}, {"name": "Netherlands", "count": 28, "lat": 52.3, "lon": 5.3, "note": "the Dutch Republic; 'Holland' is used interchangeably for it in 3 of these mentions", "r": 18.2}, {"name": "America", "count": 14, "lat": 40.0, "lon": -95.0, "note": "the English colonies in North America generally", "r": 15.4}, {"name": "India", "count": 8, "lat": 22.0, "lon": 79.0, "note": "the subcontinent as a place, distinct from the many separate mentions of the 'East India Company' as a trading organisation", "r": 13.3}, {"name": "Jamaica", "count": 12, "lat": 18.1096, "lon": -77.2975, "note": "captured from Spain 1655; became the centre of the English Caribbean slave trade", "r": 14.8}, {"name": "West Indies", "count": 10, "lat": 18.0, "lon": -66.0, "note": "the Caribbean generally", "r": 14.1}, {"name": "New England", "count": 8, "lat": 42.3, "lon": -71.5, "note": "the New England colonies -- Puritan emigration and Atlantic politics", "r": 13.3}, {"name": "Amsterdam", "count": 4, "lat": 52.3676, "lon": 4.9041, "note": "the Dutch commercial capital, rival and eventual successor to London for world-trade leadership", "r": 10.8}, {"name": "Portugal", "count": 4, "lat": 39.5, "lon": -8.0, "note": "England's oldest ally; source of Catherine of Braganza and her dowry (Tangier, Bombay)", "r": 10.8}, {"name": "Germany", "count": 4, "lat": 51.0, "lon": 10.0, "note": "used loosely for the German-speaking Empire generally", "r": 10.8}, {"name": "the Palatinate", "count": 4, "lat": 49.4, "lon": 8.4, "note": "the Rhineland electorate; Frederick V's brief kingship of Bohemia and loss of the Palatinate (1618-20) helped draw England toward the Thirty Years War", "r": 10.8}, {"name": "Sweden", "count": 4, "lat": 60.1, "lon": 15.0, "note": "Gustavus Adolphus's campaigns; later a diplomatic and trade partner/rival", "r": 10.8}, {"name": "Russia", "count": 2, "lat": 61.5, "lon": 60.0, "note": "excludes mentions of the 'Russia Company', a trading company named for it", "r": 8.7}, {"name": "Newfoundland", "count": 4, "lat": 49.0, "lon": -56.0, "note": "English fishing colony, contested with France; recovered permanently at Utrecht, 1713", "r": 10.8}, {"name": "Nova Scotia", "count": 4, "lat": 45.0, "lon": -63.0, "note": "captured by Cromwell, restored to France by Charles II, recovered permanently at Utrecht, 1713", "r": 10.8}, {"name": "Canada", "count": 2, "lat": 53.0, "lon": -106.0, "note": "ceded to France by Charles I in 1629, denying England an early foothold", "r": 8.7}, {"name": "New Amsterdam (New York)", "count": 2, "lat": 40.7128, "lon": -74.006, "note": "seized from the Dutch and renamed New York, 1664; retained by England at the Treaty of 1674", "r": 8.7}, {"name": "La Hogue", "count": 1, "lat": 49.7167, "lon": -1.9333, "note": "1692 naval battle; the French invasion fleet was destroyed here, securing the Revolution settlement in England", "r": 7.0}, {"name": "Massachusetts", "count": 1, "lat": 42.4, "lon": -71.4, "note": "the Massachusetts Bay Company's colonial patent", "r": 7.0}, {"name": "Virginia", "count": 1, "lat": 37.5, "lon": -78.5, "note": "destination for London's starving street children, shipped off as involuntary colonists", "r": 7.0}, {"name": "Barbados", "count": 1, "lat": 13.1939, "lon": -59.5432, "note": "sugar/slave colony; slave population rose from about 1,000 to 20,000 between 1640 and 1651", "r": 7.0}, {"name": "East Indies", "count": 1, "lat": -2.5, "lon": 118.0, "note": "the wider archipelago (roughly modern Indonesia), distinct from 'India' itself -- rival traders licensed here in defiance of the East India Company's charter", "r": 7.0}, {"name": "Surinam", "count": 1, "lat": 4.0, "lon": -56.0, "note": "acquired during the Interregnum", "r": 7.0}, {"name": "Hudson's Bay", "count": 1, "lat": 60.0, "lon": -85.0, "note": "the Hudson's Bay Company's territory", "r": 7.0}, {"name": "Utrecht", "count": 4, "lat": 52.0907, "lon": 5.1214, "note": "Treaty of Utrecht, 1713, ending the War of the Spanish Succession", "r": 10.8}, {"name": "Breda", "count": 7, "lat": 51.5719, "lon": 4.7683, "note": "Charles II's 1660 Declaration of Breda, promising liberty of conscience and a general pardon; also the 1667 Treaty of Breda", "r": 12.8}, {"name": "Ryswick", "count": 4, "lat": 52.0167, "lon": 4.3167, "note": "Treaty of Ryswick, 1697, ending the Nine Years' War", "r": 10.8}, {"name": "Blenheim", "count": 3, "lat": 48.85, "lon": 10.6, "note": "Marlborough's decisive 1704 victory; his Oxfordshire palace was named for it", "r": 9.9}, {"name": "Ramillies", "count": 1, "lat": 50.6167, "lon": 4.9167, "note": "Marlborough's 1706 victory", "r": 7.0}, {"name": "Flanders", "count": 1, "lat": 50.8, "lon": 3.0, "note": "region where many Englishmen served in this era's wars", "r": 7.0}, {"name": "Gibraltar", "count": 3, "lat": 36.1408, "lon": -5.3536, "note": "captured 1704; formally ceded by Spain at Utrecht, 1713", "r": 9.9}, {"name": "Minorca", "count": 3, "lat": 39.9, "lon": 4.1, "note": "naval base for British Mediterranean fleets", "r": 9.9}, {"name": "Dunkirk", "count": 6, "lat": 51.0344, "lon": 2.3768, "note": "captured from Spain 1658; sold to France by Charles II in 1662; fortifications ordered demolished at Utrecht, 1713", "r": 12.2}, {"name": "Tangier", "count": 3, "lat": 35.7595, "lon": -5.834, "note": "part of Catherine of Braganza's dowry, 1662; gave England a Mediterranean naval base", "r": 9.9}, {"name": "Senegambia", "count": 1, "lat": 13.5, "lon": -15.5, "note": "West African trading territory ceded to England at Utrecht, 1713", "r": 7.0}, {"name": "St Helena", "count": 1, "lat": -15.965, "lon": -5.7089, "note": "acquired during the Interregnum", "r": 7.0}, {"name": "Pulo Run", "count": 1, "lat": -4.5, "lon": 129.8, "note": "Banda Islands (Indonesia); exchanged with the Dutch for New Amsterdam at the Treaty of Breda, 1667", "r": 7.0}, {"name": "Brazil", "count": 2, "lat": -10.0, "lon": -55.0, "note": "Portuguese colony; England gained trading privileges there via the 1654 and 1660s Portuguese treaties", "r": 8.7}, {"name": "Africa", "count": 5, "lat": 8.0, "lon": -3.0, "note": "used both generally and, several times, specifically of West Africa and the slave trade", "r": 11.6}, {"name": "Asia", "count": 1, "lat": 30.0, "lon": 90.0, "note": "used generally of England's Asian trade/empire", "r": 7.0}, {"name": "Bengal", "count": 1, "lat": 22.9, "lon": 88.4, "note": "opened to Portuguese/English trade", "r": 7.0}, {"name": "Bohemia", "count": 1, "lat": 50.08, "lon": 14.44, "note": "Frederick V's brief 1619-20 kingship there (the 'Winter King') helped draw England toward the Thirty Years War", "r": 7.0}, {"name": "the Baltic", "count": 13, "lat": 58.0, "lon": 19.0, "note": "the Baltic Sea/trade region -- a recurring theme in the book's economic chapters, contested with the Dutch", "r": 15.1}, {"name": "the Mediterranean", "count": 12, "lat": 36.0, "lon": 18.0, "note": "the Mediterranean Sea/trade region", "r": 14.8}, {"name": "Paris", "count": 2, "lat": 48.8566, "lon": 2.3522, "note": "seat of the English ambassador", "r": 8.7}, {"name": "Madrid", "count": 2, "lat": 40.4168, "lon": -3.7038, "note": "the 1623 marriage-negotiation visit by Prince Charles and Buckingham", "r": 8.7}];
+
+var map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://www.openhistoricalmap.org/map-styles/main/main.json',
+  center: [-1.8, 52.9],
+  zoom: 5.6,
+  attributionControl: true
+});
+map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+var yearSlider = document.getElementById('yearslider');
+var yearVal = document.getElementById('yearval');
+
+map.once('styledata', function () {
+  map.filterByDate(yearSlider.value + '-01-01');
+});
+
+yearSlider.addEventListener('input', function () {
+  yearVal.textContent = yearSlider.value;
+  map.filterByDate(yearSlider.value + '-01-01');
+});
+
+var byName = {};
+var markerObjs = {};
+var rows = [];
+var detail = document.getElementById('detail');
+var search = document.getElementById('search');
+var listEl = document.getElementById('list');
+
+// Build the sidebar list directly from `places` (sorted by count desc) so it can
+// never drift out of sync with the map markers -- previously this list was static
+// hand-written HTML and silently fell behind every time a place was added later.
+var sortedPlaces = places.slice().sort(function(a, b) { return b.count - a.count; });
+sortedPlaces.forEach(function(p) {
+  var row = document.createElement('div');
+  row.className = 'row';
+  row.setAttribute('data-name', p.name);
+  row.innerHTML = '<span class="rowname">' + p.name + '</span><span class="rowcount">' + p.count + '</span>';
+  row.addEventListener('click', function() { showDetail(p.name); });
+  listEl.appendChild(row);
+  rows.push(row);
+});
+
+map.on('load', function() {
+  places.forEach(function(p) {
+    byName[p.name] = p;
+    var wrap = document.createElement('div');
+    wrap.className = 'place-marker-wrap';
+    var size = Math.max(p.r * 2, 8);
+    wrap.style.width = size + 'px';
+    wrap.style.height = size + 'px';
+
+    var circle = document.createElement('div');
+    circle.className = 'place-marker';
+    circle.style.width = (p.r * 2) + 'px';
+    circle.style.height = (p.r * 2) + 'px';
+    wrap.appendChild(circle);
+
+    // exact-location pin: a small fixed-size dot at the true coordinate, so the
+    // precise point stays visible even when the count-scaled circle around it is large
+    var pin = document.createElement('div');
+    pin.className = 'place-pin';
+    pin.title = p.name + ' — exact location';
+    wrap.appendChild(pin);
+
+    var popupHtml = '<b>' + p.name + '</b><br>' + p.count + ' mention' + (p.count === 1 ? '' : 's') +
+      (p.note ? '<br><i>' + p.note + '</i>' : '');
+    var popup = new maplibregl.Popup({ offset: p.r + 4 }).setHTML(popupHtml);
+
+    var marker = new maplibregl.Marker({ element: wrap })
+      .setLngLat([p.lon, p.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    wrap.addEventListener('click', function() { showDetail(p.name); });
+    markerObjs[p.name] = marker;
+  });
+});
+
+function showDetail(name) {
+  var p = byName[name] || sortedPlaces.filter(function(x) { return x.name === name; })[0];
+  if (!p) return;
+  detail.innerHTML = '<div class="name">' + p.name + '</div>' +
+    '<div>' + p.count + ' mention' + (p.count === 1 ? '' : 's') + '</div>' +
+    (p.note ? '<div class="note">' + p.note + '</div>' : '');
+  rows.forEach(function(r) { r.classList.toggle('active', r.getAttribute('data-name') === name); });
+  var m = markerObjs[name];
+  if (m) {
+    map.flyTo({ center: m.getLngLat(), zoom: Math.max(map.getZoom(), 7) });
+    m.togglePopup();
+  }
+}
+
+search.addEventListener('input', function() {
+  var q = search.value.trim().toLowerCase();
+  rows.forEach(function(r) {
+    var name = r.getAttribute('data-name').toLowerCase();
+    r.style.display = name.indexOf(q) === -1 ? 'none' : 'flex';
+  });
+});
+</script>
+</body>
+</html>

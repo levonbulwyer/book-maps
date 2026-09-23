@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Places in Europe — The Struggle for Mastery in Europe, 1848–1918 (A.J.P. Taylor)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+<script src="https://unpkg.com/@openhistoricalmap/maplibre-gl-dates/index.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #2b2620; background: #fff;
+  }
+  #app { display: flex; height: 100vh; }
+  #map { flex: 1 1 auto; height: 100%; }
+  #sidebar {
+    width: 350px; flex: 0 0 350px; border-left: 1px solid #e3ddd0; padding: 14px;
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  h1 { font-size: 1.05em; margin: 0 0 4px 0; font-weight: 600; }
+  .subtitle { font-size: 0.8em; color: #756f66; margin: 0 0 10px 0; line-height:1.4; }
+  .legend { font-size: 0.75em; color: #6b655c; margin: 0 0 6px 0; display:flex; gap:12px; flex-wrap:wrap; }
+  .legend span { display:flex; align-items:center; gap:5px; }
+  .swatch { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .swatch.eu { background: rgba(161,54,44,0.68); border:1px solid #6e211a; }
+  .swatch.noneu { background: rgba(53,89,133,0.68); border:1px solid #1f3a56; }
+  .legend2 {
+    font-size: 0.72em; color: #6b655c; margin: 0 0 12px 0; display:flex; flex-wrap:wrap;
+    gap: 4px 10px; background:#f7f4ee; border:1px solid #e3ddd0; border-radius:8px; padding:7px 9px;
+  }
+  .legend2 span { display:flex; align-items:center; gap:4px; }
+  .legend2 .ic { font-size: 1.15em; color:#a1362c; width:1.1em; text-align:center; }
+  .stat {
+    background: #f7f4ee; border: 1px solid #e3ddd0; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.85em; margin-bottom: 10px;
+  }
+  .stat b { font-size: 1.3em; display:block; color:#a1362c; }
+  input[type=search] {
+    width: 100%; padding: 6px 8px; border: 1px solid #d8d1c2; border-radius: 6px;
+    font-size: 0.85em; margin-bottom: 8px;
+  }
+  .list { flex: 1 1 auto; overflow-y: auto; border: 1px solid #e3ddd0; border-radius: 8px; min-height: 100px; }
+  .row {
+    display: flex; justify-content: space-between; align-items:center; padding: 5px 10px;
+    font-size: 0.82em; border-bottom: 1px solid #efeae0; cursor: pointer; gap: 6px;
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover, .row.active { background: #f2ece0; }
+  .row.noneu .rowname::after { content: " *"; color:#5a7ba3; }
+  .rowicon { width: 1.1em; text-align:center; color:#a1362c; font-size:0.95em; flex: 0 0 auto; }
+  .rowname { flex: 1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rowyear { color: #8b8478; font-variant-numeric: tabular-nums; font-size:0.92em; }
+  .rowcount { color: #a1362c; font-weight: 600; min-width: 2em; text-align:right; }
+  .detail {
+    margin-top: 10px; padding: 10px 12px; background: #f7f4ee; border: 1px solid #e3ddd0;
+    border-radius: 8px; font-size: 0.85em; min-height: 50px;
+  }
+  .detail .name { font-weight: 600; margin-bottom: 3px; }
+  .detail .year { color: #a1362c; font-weight:600; }
+  .detail .cat { color: #756f66; font-style:italic; }
+  .detail .note { color: #6b655c; margin-top: 4px; }
+  .place-marker {
+    border-radius: 50%;
+    background: rgba(161,54,44,0.68);
+    border: 1px solid #6e211a;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.95);
+    line-height: 1;
+  }
+  .place-marker.noneu {
+    background: rgba(53,89,133,0.68);
+    border: 1px solid #1f3a56;
+  }
+  .place-marker.current {
+    box-shadow: 0 0 0 4px rgba(255,196,0,0.55);
+  }
+  .place-marker.future {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .place-marker.past {
+    opacity: 0.45;
+  }
+  .maplibregl-popup-content b { color: #a1362c; }
+  .maplibregl-popup-content .poptag { color:#756f66; font-style:italic; font-size:0.9em; }
+  .yearbox {
+    background: #f7f4ee; border: 1px solid #e3ddd0; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.85em; margin-bottom: 10px;
+  }
+  .yearbox .yearrow { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .yearbox .yearval { font-size: 1.3em; font-weight: 700; color: #a1362c; }
+  .yearbox input[type=range] { width: 100%; }
+  .yearbox .yearends { display: flex; justify-content: space-between; font-size: 0.72em; color: #8b8478; margin-top: 2px; }
+  .yearbox .playrow { display:flex; gap:8px; margin-top:8px; }
+  .yearbox button {
+    font-size: 0.78em; padding: 4px 10px; border-radius: 6px; border: 1px solid #d8d1c2;
+    background: #fff; cursor: pointer;
+  }
+  .yearbox button:hover { background: #f2ece0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <div id="sidebar">
+    <h1>Places in Europe (and beyond)</h1>
+    <p class="subtitle">The Struggle for Mastery in Europe 1848–1918, A.J.P. Taylor. Base map: OpenHistoricalMap ("Historic" style), filtered to the year below, so borders shift as you move the slider. Markers appear as their key event is reached; drag or press Play.</p>
+    <div class="legend"><span><span class="swatch eu"></span>in Europe</span><span><span class="swatch noneu"></span>outside Europe *</span></div>
+    <div class="legend2"><span><span class="ic">★</span>capital city</span><span><span class="ic">⚔</span>battle / siege</span><span><span class="ic">▤</span>treaty / conference</span><span><span class="ic">✳</span>revolution / uprising</span><span><span class="ic">⊕</span>colonial flashpoint</span><span><span class="ic">⚓</span>naval base / port</span></div>
+    <div class="yearbox">
+      <div class="yearrow"><span>Map shows:</span><span class="yearval" id="yearval">1848</span></div>
+      <input type="range" id="yearslider" min="1848" max="1918" value="1848" step="1">
+      <div class="yearends"><span>1848</span><span>1918</span></div>
+      <div class="playrow">
+        <button id="playbtn">▶ Play</button>
+        <button id="resetbtn">Reset</button>
+      </div>
+    </div>
+    <div class="stat"><b>2323</b>total place-mentions, 96 distinct places</div>
+    <input type="search" id="search" placeholder="Filter places…">
+    <div class="list" id="list"></div>
+    <div class="detail" id="detail">Click a place, on the map or in the list, to see details.</div>
+  </div>
+</div>
+
+<script>
+var places = [{"name": "Constantinople", "count": 173, "lat": 41.0082, "lon": 28.9784, "year": 1878, "note": "Ottoman capital; the 'Eastern Question' at the heart of the whole book", "eu": true, "r": 25.6, "cat": "capital", "icon": "\u2605"}, {"name": "Morocco", "count": 157, "lat": 34.0331, "lon": -5.0003, "year": 1905, "note": "1905 and 1911 crises over French/German rivalry there; outside Europe proper but a central Great-Power flashpoint", "eu": false, "r": 25.2, "cat": "colonial", "icon": "\u2295"}, {"name": "Poland", "count": 150, "lat": 52.2297, "lon": 21.0122, "year": 1863, "note": "partitioned nation; the recurring problem of the Polish provinces under Russia/Austria/Prussia", "eu": true, "r": 25.0, "cat": "territory", "icon": ""}, {"name": "Paris", "count": 124, "lat": 48.8566, "lon": 2.3522, "year": 1856, "note": "French capital; 1856 Congress of Paris, 1871 Commune", "eu": true, "r": 24.2, "cat": "treaty", "icon": "\u25a4"}, {"name": "Vienna", "count": 113, "lat": 48.2082, "lon": 16.3738, "year": 1848, "note": "Habsburg capital; 1848 revolution, seat of the Metternich system", "eu": true, "r": 23.9, "cat": "revolution", "icon": "\u2733"}, {"name": "Serbia", "count": 110, "lat": 44.0165, "lon": 21.0059, "year": 1903, "note": "Balkan kingdom; central to the pre-1914 crises", "eu": true, "r": 23.7, "cat": "territory", "icon": ""}, {"name": "Berlin", "count": 102, "lat": 52.52, "lon": 13.405, "year": 1878, "note": "Prussian/German capital; 1878 Congress of Berlin, later the Bismarckian system", "eu": true, "r": 23.4, "cat": "treaty", "icon": "\u25a4"}, {"name": "Bulgaria", "count": 102, "lat": 42.7339, "lon": 25.4858, "year": 1878, "note": "created as an autonomous principality at the 1878 Congress of Berlin", "eu": true, "r": 23.4, "cat": "territory", "icon": ""}, {"name": "Venetia", "count": 85, "lat": 45.55, "lon": 12.0, "year": 1866, "note": "region ceded to Italy in 1866; distinct from the city of Venice", "eu": true, "r": 22.7, "cat": "territory", "icon": ""}, {"name": "Rumania", "count": 78, "lat": 44.4268, "lon": 26.1025, "year": 1878, "note": "period spelling of Romania; independence recognised 1878", "eu": true, "r": 22.3, "cat": "territory", "icon": ""}, {"name": "London", "count": 71, "lat": 51.5074, "lon": -0.1278, "year": 1852, "note": "British capital; conferences and treaty diplomacy throughout", "eu": true, "r": 21.9, "cat": "capital", "icon": "\u2605"}, {"name": "Sardinia", "count": 70, "lat": 45.15, "lon": 7.85, "year": 1859, "note": "the Kingdom of Sardinia (i.e. Piedmont) that led Italian unification, not just the island", "eu": true, "r": 21.9, "cat": "territory", "icon": ""}, {"name": "Lorraine", "count": 69, "lat": 49.1193, "lon": 6.1757, "year": 1871, "note": "annexed by Germany after the Franco-Prussian War, 1871", "eu": true, "r": 21.8, "cat": "territory", "icon": ""}, {"name": "Alsace", "count": 64, "lat": 48.5, "lon": 7.5, "year": 1871, "note": "annexed by Germany after the Franco-Prussian War, 1871", "eu": true, "r": 21.5, "cat": "territory", "icon": ""}, {"name": "St Petersburg", "count": 58, "lat": 59.9311, "lon": 30.3609, "year": 1848, "note": "Russian imperial capital", "eu": true, "r": 21.1, "cat": "capital", "icon": "\u2605"}, {"name": "Persia", "count": 53, "lat": 35.6892, "lon": 51.389, "year": 1907, "note": "1907 Anglo-Russian Convention divided it into spheres of influence; outside Europe", "eu": false, "r": 20.7, "cat": "colonial", "icon": "\u2295"}, {"name": "Rome", "count": 41, "lat": 41.9028, "lon": 12.4964, "year": 1870, "note": "capital of unified Italy from 1870", "eu": true, "r": 19.7, "cat": "capital", "icon": "\u2605"}, {"name": "Sleswick", "count": 40, "lat": 54.5, "lon": 9.55, "year": 1864, "note": "Taylor's period spelling of Schleswig; 1864 war with Denmark", "eu": true, "r": 19.6, "cat": "territory", "icon": ""}, {"name": "Bosnia", "count": 32, "lat": 44.0, "lon": 17.9, "year": 1878, "note": "occupied by Austria in 1878, annexed 1908", "eu": true, "r": 18.7, "cat": "territory", "icon": ""}, {"name": "Savoy", "count": 31, "lat": 45.5646, "lon": 5.9178, "year": 1860, "note": "ceded by Sardinia to France in 1860", "eu": true, "r": 18.6, "cat": "territory", "icon": ""}, {"name": "Frankfurt", "count": 27, "lat": 50.1109, "lon": 8.6821, "year": 1871, "note": "1871 Treaty of Frankfurt; also site of the 1848 Frankfurt Parliament", "eu": true, "r": 18.0, "cat": "treaty", "icon": "\u25a4"}, {"name": "Galicia", "count": 25, "lat": 49.8, "lon": 22.5, "year": 1848, "note": "Austrian share of partitioned Poland", "eu": true, "r": 17.7, "cat": "territory", "icon": ""}, {"name": "Lombardy", "count": 25, "lat": 45.4, "lon": 9.2, "year": 1859, "note": "ceded by Austria to Piedmont-Sardinia in 1859", "eu": true, "r": 17.7, "cat": "territory", "icon": ""}, {"name": "Manchuria", "count": 23, "lat": 44.0, "lon": 125.0, "year": 1904, "note": "1904-05 Russo-Japanese War theatre; outside Europe but a direct consequence of European Far-Eastern rivalry", "eu": false, "r": 17.4, "cat": "colonial", "icon": "\u2295"}, {"name": "Fashoda", "count": 23, "lat": 9.8811, "lon": 32.1176, "year": 1898, "note": "1898 Anglo-French colonial confrontation in Sudan; outside Europe but a landmark Great-Power crisis", "eu": false, "r": 17.4, "cat": "colonial", "icon": "\u2295"}, {"name": "Crimea", "count": 21, "lat": 45.0, "lon": 34.1, "year": 1854, "note": "1854-56 Crimean War", "eu": true, "r": 17.0, "cat": "territory", "icon": ""}, {"name": "Tripoli", "count": 21, "lat": 32.8872, "lon": 13.1913, "year": 1911, "note": "1911 Italo-Turkish War; outside Europe but the war reshaped Balkan diplomacy", "eu": false, "r": 17.0, "cat": "colonial", "icon": "\u2295"}, {"name": "Hercegovina", "count": 20, "lat": 43.35, "lon": 17.8, "year": 1875, "note": "period spelling of Herzegovina; 1875 revolt triggered the Eastern crisis", "eu": true, "r": 16.8, "cat": "territory", "icon": ""}, {"name": "Macedonia", "count": 19, "lat": 41.6, "lon": 21.7, "year": 1903, "note": "Ottoman province, focus of reform schemes and the Balkan Wars", "eu": true, "r": 16.6, "cat": "revolution", "icon": "\u2733"}, {"name": "Albania", "count": 18, "lat": 41.3275, "lon": 19.8187, "year": 1913, "note": "created as an independent state after the Balkan Wars, 1913", "eu": true, "r": 16.4, "cat": "territory", "icon": ""}, {"name": "Tyrol", "count": 18, "lat": 47.2692, "lon": 11.4041, "year": 1915, "note": "Austrian province claimed by Italian irredentists", "eu": true, "r": 16.4, "cat": "territory", "icon": ""}, {"name": "Korea", "count": 18, "lat": 37.5665, "lon": 126.978, "year": 1904, "note": "object of Russo-Japanese rivalry; outside Europe", "eu": false, "r": 16.4, "cat": "colonial", "icon": "\u2295"}, {"name": "Sedan", "count": 17, "lat": 49.7009, "lon": 4.943, "year": 1870, "note": "1870 battle; Napoleon III's army captured, ending the Second Empire", "eu": true, "r": 16.2, "cat": "battle", "icon": "\u2694"}, {"name": "Tangier", "count": 17, "lat": 35.7595, "lon": -5.834, "year": 1905, "note": "1905 Kaiser's visit sparked the First Morocco Crisis; outside Europe", "eu": false, "r": 16.2, "cat": "colonial", "icon": "\u2295"}, {"name": "Sevastopol", "count": 15, "lat": 44.6166, "lon": 33.5254, "year": 1855, "note": "1854-55 siege, Crimean War", "eu": true, "r": 15.7, "cat": "battle", "icon": "\u2694"}, {"name": "Warsaw", "count": 15, "lat": 52.2297, "lon": 21.0122, "year": 1863, "note": "1863 Polish uprising against Russia", "eu": true, "r": 15.7, "cat": "revolution", "icon": "\u2733"}, {"name": "Prague", "count": 15, "lat": 50.0755, "lon": 14.4378, "year": 1866, "note": "1866 Treaty of Prague ended the Austro-Prussian War", "eu": true, "r": 15.7, "cat": "treaty", "icon": "\u25a4"}, {"name": "Nice", "count": 14, "lat": 43.7102, "lon": 7.262, "year": 1860, "note": "ceded by Sardinia to France in 1860, with Savoy", "eu": true, "r": 15.4, "cat": "territory", "icon": ""}, {"name": "Bessarabia", "count": 13, "lat": 47.0, "lon": 28.5, "year": 1878, "note": "returned to Russia at the 1878 Congress of Berlin", "eu": true, "r": 15.1, "cat": "territory", "icon": ""}, {"name": "Bjorko", "count": 13, "lat": 59.9, "lon": 19.15, "year": 1905, "note": "1905 secret (and stillborn) Russo-German treaty signed here", "eu": true, "r": 15.1, "cat": "treaty", "icon": "\u25a4"}, {"name": "Suez", "count": 12, "lat": 29.9668, "lon": 32.5498, "year": 1882, "note": "the Canal, a critical British strategic interest; outside Europe (Egypt)", "eu": false, "r": 14.8, "cat": "colonial", "icon": "\u2295"}, {"name": "Gibraltar", "count": 12, "lat": 36.1408, "lon": -5.3536, "year": 1848, "note": "British naval fortress guarding the Mediterranean approach", "eu": true, "r": 14.8, "cat": "port", "icon": "\u2693"}, {"name": "Plevna", "count": 10, "lat": 43.417, "lon": 24.6067, "year": 1877, "note": "1877 siege, Russo-Turkish War", "eu": true, "r": 14.1, "cat": "battle", "icon": "\u2694"}, {"name": "San Stefano", "count": 9, "lat": 40.9803, "lon": 28.8236, "year": 1878, "note": "1878 treaty ending the Russo-Turkish War, soon revised at Berlin", "eu": true, "r": 13.7, "cat": "treaty", "icon": "\u25a4"}, {"name": "Transylvania", "count": 9, "lat": 46.5, "lon": 24.5, "year": 1848, "note": "Hungarian revolution of 1848 spread here", "eu": true, "r": 13.7, "cat": "revolution", "icon": "\u2733"}, {"name": "Budapest", "count": 9, "lat": 47.4979, "lon": 19.0402, "year": 1867, "note": "Hungarian capital; 1867 Ausgleich/Compromise", "eu": true, "r": 13.7, "cat": "capital", "icon": "\u2605"}, {"name": "Silesia", "count": 9, "lat": 51.0, "lon": 16.9, "year": 1848, "note": "Prussian province", "eu": true, "r": 13.7, "cat": "territory", "icon": ""}, {"name": "Hesse", "count": 9, "lat": 50.6, "lon": 9.0, "year": 1866, "note": "German state disputed in the 1866 Austro-Prussian War", "eu": true, "r": 13.7, "cat": "territory", "icon": ""}, {"name": "Adrianople", "count": 8, "lat": 41.6771, "lon": 26.5557, "year": 1913, "note": "changed hands twice in the Balkan Wars", "eu": true, "r": 13.3, "cat": "battle", "icon": "\u2694"}, {"name": "Port Arthur", "count": 8, "lat": 38.85, "lon": 121.2667, "year": 1904, "note": "1904 siege, Russo-Japanese War; outside Europe", "eu": false, "r": 13.3, "cat": "battle", "icon": "\u2694"}, {"name": "Dalmatia", "count": 8, "lat": 43.5081, "lon": 16.4402, "year": 1866, "note": "Austrian Adriatic coastal province", "eu": true, "r": 13.3, "cat": "territory", "icon": ""}, {"name": "Posen", "count": 7, "lat": 52.4064, "lon": 16.9252, "year": 1848, "note": "Prussian province with a Polish majority", "eu": true, "r": 12.8, "cat": "territory", "icon": ""}, {"name": "Malta", "count": 7, "lat": 35.8989, "lon": 14.5146, "year": 1848, "note": "British Mediterranean naval base", "eu": true, "r": 12.8, "cat": "port", "icon": "\u2693"}, {"name": "Trieste", "count": 6, "lat": 45.6495, "lon": 13.7768, "year": 1915, "note": "Austrian Adriatic port claimed by Italy", "eu": true, "r": 12.2, "cat": "territory", "icon": ""}, {"name": "Madrid", "count": 5, "lat": 40.4168, "lon": -3.7038, "year": 1868, "note": "Spanish capital; 1868 revolution and the Hohenzollern candidacy crisis", "eu": true, "r": 11.6, "cat": "capital", "icon": "\u2605"}, {"name": "Verdun", "count": 5, "lat": 49.1585, "lon": 5.385, "year": 1916, "note": "1916 First World War battle", "eu": true, "r": 11.6, "cat": "battle", "icon": "\u2694"}, {"name": "Saxony", "count": 5, "lat": 51.05, "lon": 13.4, "year": 1866, "note": "German kingdom", "eu": true, "r": 11.6, "cat": "territory", "icon": ""}, {"name": "Cyprus", "count": 5, "lat": 35.1856, "lon": 33.3823, "year": 1878, "note": "ceded to Britain by Turkey in 1878", "eu": true, "r": 11.6, "cat": "territory", "icon": ""}, {"name": "Belgrade", "count": 4, "lat": 44.7866, "lon": 20.4489, "year": 1903, "note": "Serbian capital", "eu": true, "r": 10.8, "cat": "capital", "icon": "\u2605"}, {"name": "Stockholm", "count": 4, "lat": 59.3293, "lon": 18.0686, "year": 1905, "note": "Swedish capital", "eu": true, "r": 10.8, "cat": "capital", "icon": "\u2605"}, {"name": "Marne", "count": 4, "lat": 48.9, "lon": 3.5, "year": 1914, "note": "1914 Battle of the Marne", "eu": true, "r": 10.8, "cat": "battle", "icon": "\u2694"}, {"name": "Hanover", "count": 4, "lat": 52.3759, "lon": 9.732, "year": 1866, "note": "annexed by Prussia in 1866", "eu": true, "r": 10.8, "cat": "territory", "icon": ""}, {"name": "Bohemia", "count": 3, "lat": 49.8, "lon": 15.5, "year": 1866, "note": "Austro-Prussian War theatre", "eu": true, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "Piedmont", "count": 3, "lat": 45.0703, "lon": 7.6869, "year": 1859, "note": "core Italian province; capital Turin led unification", "eu": true, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "Athens", "count": 3, "lat": 37.9838, "lon": 23.7275, "year": 1897, "note": "Greek capital", "eu": true, "r": 9.9, "cat": "capital", "icon": "\u2605"}, {"name": "Brussels", "count": 3, "lat": 50.8503, "lon": 4.3517, "year": 1839, "note": "Belgian capital; Belgian neutrality guaranteed by the powers", "eu": true, "r": 9.9, "cat": "capital", "icon": "\u2605"}, {"name": "Baden", "count": 3, "lat": 48.9, "lon": 8.4, "year": 1848, "note": "German state, site of 1848 revolutionary unrest", "eu": true, "r": 9.9, "cat": "revolution", "icon": "\u2733"}, {"name": "Bavaria", "count": 3, "lat": 48.9, "lon": 11.4, "year": 1871, "note": "German kingdom", "eu": true, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "Scutari", "count": 3, "lat": 42.0683, "lon": 19.5126, "year": 1913, "note": "Balkan Wars siege", "eu": true, "r": 9.9, "cat": "battle", "icon": "\u2694"}, {"name": "Reval", "count": 3, "lat": 59.437, "lon": 24.7536, "year": 1908, "note": "1908 meeting of Edward VII and Nicholas II", "eu": true, "r": 9.9, "cat": "treaty", "icon": "\u25a4"}, {"name": "Moldavia", "count": 3, "lat": 47.16, "lon": 27.6, "year": 1856, "note": "Danubian principality, precursor of Romania", "eu": true, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "Batum", "count": 3, "lat": 41.6168, "lon": 41.6367, "year": 1878, "note": "annexed by Russia from Turkey in 1878; outside Europe (Caucasus)", "eu": false, "r": 9.9, "cat": "territory", "icon": ""}, {"name": "Solferino", "count": 2, "lat": 45.3728, "lon": 10.5828, "year": 1859, "note": "1859 battle, Franco-Austrian War over Italy", "eu": true, "r": 8.7, "cat": "battle", "icon": "\u2694"}, {"name": "Magenta", "count": 2, "lat": 45.4614, "lon": 8.8834, "year": 1859, "note": "1859 battle, Franco-Austrian War over Italy", "eu": true, "r": 8.7, "cat": "battle", "icon": "\u2694"}, {"name": "Dresden", "count": 2, "lat": 51.0504, "lon": 13.7373, "year": 1866, "note": "Saxon capital", "eu": true, "r": 8.7, "cat": "capital", "icon": "\u2605"}, {"name": "Strasbourg", "count": 2, "lat": 48.5734, "lon": 7.7521, "year": 1870, "note": "annexed by Germany with Alsace in 1871", "eu": true, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Somme", "count": 2, "lat": 50.0, "lon": 2.75, "year": 1916, "note": "1916 First World War battle", "eu": true, "r": 8.7, "cat": "battle", "icon": "\u2694"}, {"name": "Mukden", "count": 2, "lat": 41.8057, "lon": 123.4315, "year": 1905, "note": "1905 battle, Russo-Japanese War; outside Europe", "eu": false, "r": 8.7, "cat": "battle", "icon": "\u2694"}, {"name": "Kiel", "count": 2, "lat": 54.3233, "lon": 10.1228, "year": 1865, "note": "Prussian naval base acquired from the Schleswig-Holstein settlement", "eu": true, "r": 8.7, "cat": "port", "icon": "\u2693"}, {"name": "Danzig", "count": 2, "lat": 54.352, "lon": 18.6466, "year": 1848, "note": "Prussian Baltic port", "eu": true, "r": 8.7, "cat": "port", "icon": "\u2693"}, {"name": "Kars", "count": 2, "lat": 40.6013, "lon": 43.0975, "year": 1878, "note": "annexed by Russia from Turkey in 1878; outside Europe (Caucasus)", "eu": false, "r": 8.7, "cat": "territory", "icon": ""}, {"name": "Odessa", "count": 2, "lat": 46.4825, "lon": 30.7233, "year": 1854, "note": "Russian Black Sea port", "eu": true, "r": 8.7, "cat": "port", "icon": "\u2693"}, {"name": "Sofia", "count": 1, "lat": 42.6977, "lon": 23.3219, "year": 1878, "note": "Bulgarian capital", "eu": true, "r": 7.0, "cat": "capital", "icon": "\u2605"}, {"name": "Hamburg", "count": 1, "lat": 53.5511, "lon": 9.9937, "year": 1848, "note": "Hanseatic port", "eu": true, "r": 7.0, "cat": "port", "icon": "\u2693"}, {"name": "Copenhagen", "count": 1, "lat": 55.6761, "lon": 12.5683, "year": 1864, "note": "Danish capital, 1864 war with Prussia/Austria", "eu": true, "r": 7.0, "cat": "capital", "icon": "\u2605"}, {"name": "Metz", "count": 1, "lat": 49.1193, "lon": 6.1757, "year": 1870, "note": "1870 siege; annexed by Germany with Lorraine", "eu": true, "r": 7.0, "cat": "battle", "icon": "\u2694"}, {"name": "Tannenberg", "count": 1, "lat": 53.4906, "lon": 20.1667, "year": 1914, "note": "1914 Eastern Front battle", "eu": true, "r": 7.0, "cat": "battle", "icon": "\u2694"}, {"name": "Liege", "count": 1, "lat": 50.6326, "lon": 5.5797, "year": 1914, "note": "1914 German invasion of neutral Belgium began here", "eu": true, "r": 7.0, "cat": "battle", "icon": "\u2694"}, {"name": "Sarajevo", "count": 1, "lat": 43.8563, "lon": 18.4131, "year": 1914, "note": "1914 assassination of Franz Ferdinand, the war's trigger", "eu": true, "r": 7.0, "cat": "revolution", "icon": "\u2733"}, {"name": "Algeciras", "count": 1, "lat": 36.1408, "lon": -5.4562, "year": 1906, "note": "1906 conference resolved (temporarily) the First Morocco Crisis", "eu": true, "r": 7.0, "cat": "treaty", "icon": "\u25a4"}, {"name": "Portsmouth (NH)", "count": 1, "lat": 43.0718, "lon": -70.7626, "year": 1905, "note": "1905 treaty ending the Russo-Japanese War, in New Hampshire, USA; outside Europe", "eu": false, "r": 7.0, "cat": "treaty", "icon": "\u25a4"}, {"name": "Tsushima", "count": 1, "lat": 34.2, "lon": 129.3, "year": 1905, "note": "1905 naval battle, Russo-Japanese War; outside Europe", "eu": false, "r": 7.0, "cat": "battle", "icon": "\u2694"}, {"name": "Zurich", "count": 1, "lat": 47.3769, "lon": 8.5417, "year": 1859, "note": "1859 peace treaty ending the Franco-Austrian War", "eu": true, "r": 7.0, "cat": "treaty", "icon": "\u25a4"}, {"name": "Novi Bazar", "count": 1, "lat": 43.1367, "lon": 20.5122, "year": 1908, "note": "the Sanjak of Novi Bazar, an Austro-Ottoman strategic wedge in the Balkans", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Wallachia", "count": 1, "lat": 44.4, "lon": 25.9, "year": 1856, "note": "Danubian principality, precursor of Romania", "eu": true, "r": 7.0, "cat": "territory", "icon": ""}, {"name": "Riga", "count": 1, "lat": 56.9496, "lon": 24.1052, "year": 1915, "note": "Baltic port, Eastern Front", "eu": true, "r": 7.0, "cat": "port", "icon": "\u2693"}];
+var CAT_LABELS = {"capital": "capital city", "battle": "battle / siege", "treaty": "treaty / conference", "revolution": "revolution / uprising / spark", "colonial": "colonial flashpoint", "port": "naval base / port", "territory": "region / territory / state"};
+
+var map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://www.openhistoricalmap.org/map-styles/main/main.json',
+  center: [20, 46],
+  zoom: 3.6,
+  attributionControl: true
+});
+map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+var yearSlider = document.getElementById('yearslider');
+var yearVal = document.getElementById('yearval');
+var playBtn = document.getElementById('playbtn');
+var resetBtn = document.getElementById('resetbtn');
+var playing = null;
+
+map.once('styledata', function () {
+  map.filterByDate(yearSlider.value + '-06-01');
+});
+
+function applyYear(year) {
+  map.filterByDate(year + '-06-01');
+  Object.keys(markerObjs).forEach(function(name) {
+    var p = byName[name];
+    var el = markerEls[name];
+    el.classList.remove('current', 'future', 'past');
+    if (p.year > year) {
+      el.classList.add('future');
+    } else if (p.year === year) {
+      el.classList.add('current');
+    } else {
+      el.classList.add('past');
+    }
+  });
+}
+
+yearSlider.addEventListener('input', function () {
+  yearVal.textContent = yearSlider.value;
+  applyYear(parseInt(yearSlider.value, 10));
+});
+
+playBtn.addEventListener('click', function() {
+  if (playing) {
+    clearInterval(playing);
+    playing = null;
+    playBtn.textContent = '▶ Play';
+    return;
+  }
+  playBtn.textContent = '⏸ Pause';
+  playing = setInterval(function() {
+    var y = parseInt(yearSlider.value, 10) + 1;
+    if (y > 1918) {
+      clearInterval(playing);
+      playing = null;
+      playBtn.textContent = '▶ Play';
+      return;
+    }
+    yearSlider.value = y;
+    yearVal.textContent = y;
+    applyYear(y);
+  }, 220);
+});
+
+resetBtn.addEventListener('click', function() {
+  if (playing) { clearInterval(playing); playing = null; playBtn.textContent = '▶ Play'; }
+  yearSlider.value = 1848;
+  yearVal.textContent = 1848;
+  applyYear(1848);
+});
+
+var byName = {};
+var markerObjs = {};
+var markerEls = {};
+
+map.on('load', function() {
+  places.forEach(function(p) {
+    byName[p.name] = p;
+    var el = document.createElement('div');
+    el.className = 'place-marker' + (p.eu ? '' : ' noneu');
+    var d = p.r * 2;
+    el.style.width = d + 'px';
+    el.style.height = d + 'px';
+    if (p.icon) {
+      var fontSize = Math.max(8, Math.min(20, p.r * 0.95));
+      el.style.fontSize = fontSize + 'px';
+      el.textContent = p.icon;
+    }
+
+    var catLabel = CAT_LABELS[p.cat] || '';
+    var popupHtml = '<b>' + p.name + '</b> (' + p.year + ')<br><span class="poptag">' + catLabel + '</span><br>' +
+      p.count + ' mention' + (p.count === 1 ? '' : 's') +
+      (p.note ? '<br><i>' + p.note + '</i>' : '');
+    var popup = new maplibregl.Popup({ offset: p.r + 4 }).setHTML(popupHtml);
+
+    var marker = new maplibregl.Marker({ element: el })
+      .setLngLat([p.lon, p.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    el.addEventListener('click', function() { showDetail(p.name); });
+    markerObjs[p.name] = marker;
+    markerEls[p.name] = el;
+  });
+  applyYear(1848);
+});
+
+var rows = [];
+var detail = document.getElementById('detail');
+var search = document.getElementById('search');
+var listEl = document.getElementById('list');
+
+// Build the sidebar list directly from `places` (sorted by count desc) so it can
+// never drift out of sync with the map markers if new places are added later.
+var ICON_ESC = {"\u2605":"&#9733;","\u2694":"&#9876;","\u25A4":"&#9636;","\u2733":"&#10035;","\u2295":"&#8853;","\u2693":"&#9875;","":""};
+var sortedPlaces = places.slice().sort(function(a, b) { return b.count - a.count; });
+sortedPlaces.forEach(function(p) {
+  var row = document.createElement('div');
+  row.className = 'row' + (p.eu ? '' : ' noneu');
+  row.setAttribute('data-name', p.name);
+  var icon = ICON_ESC[p.icon] !== undefined ? ICON_ESC[p.icon] : p.icon;
+  row.innerHTML = '<span class="rowicon">' + (icon || '') + '</span>' +
+    '<span class="rowname">' + p.name + '</span>' +
+    '<span class="rowyear">' + p.year + '</span>' +
+    '<span class="rowcount">' + p.count + '</span>';
+  row.addEventListener('click', function() { showDetail(p.name); });
+  listEl.appendChild(row);
+  rows.push(row);
+});
+
+function showDetail(name) {
+  var p = byName[name];
+  if (!p) return;
+  var catLabel = CAT_LABELS[p.cat] || '';
+  detail.innerHTML = '<div class="name">' + p.name + '</div>' +
+    '<div><span class="year">' + p.year + '</span> — ' + p.count + ' mention' + (p.count === 1 ? '' : 's') +
+    (p.eu ? '' : ' <i>(outside Europe)</i>') + '</div>' +
+    '<div class="cat">' + catLabel + '</div>' +
+    (p.note ? '<div class="note">' + p.note + '</div>' : '');
+  rows.forEach(function(r) { r.classList.toggle('active', r.getAttribute('data-name') === name); });
+  var m = markerObjs[name];
+  if (m) {
+    map.flyTo({ center: m.getLngLat(), zoom: Math.max(map.getZoom(), 5) });
+    m.togglePopup();
+  }
+}
+
+search.addEventListener('input', function() {
+  var q = search.value.trim().toLowerCase();
+  rows.forEach(function(r) {
+    var name = r.getAttribute('data-name').toLowerCase();
+    r.style.display = name.indexOf(q) === -1 ? 'none' : 'flex';
+  });
+});
+</script>
+</body>
+</html>
