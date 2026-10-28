@@ -196,6 +196,37 @@
     header.top{ flex-direction:column; align-items:stretch; }
     .summary-card{ min-width:0; }
   }
+
+  .viewsw{ display:inline-flex; background:var(--surface-2); border:1px solid var(--line); border-radius:99px; padding:3px; margin:0 0 18px; }
+  .viewsw button{ font:inherit; font-size:13px; font-weight:600; color:var(--ink-soft); background:transparent; border:none; border-radius:99px; padding:6px 16px; cursor:pointer; }
+  .viewsw button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
+  .device-note a{ color:var(--accent); }
+  .genre{ margin:0 0 34px; }
+  .genre h2{ font-size:24px; font-weight:600; margin:0 0 2px; }
+  .genre .pairs{ margin:0 0 14px; font-size:13px; color:var(--ink-soft); font-style:italic; }
+  .pair{ display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:700px){ .pair{ grid-template-columns:1fr; } }
+  .lang-col h4{ margin:0 0 8px; font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); }
+  .lang-col.greek h4{ color:var(--accent); } .lang-col.latin h4{ color:var(--gold); }
+  .lang-col .none{ font-size:13px; color:var(--ink-soft); font-style:italic; }
+  .author{ background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); margin:0 0 10px; overflow:hidden; border-left:6px solid var(--accent); }
+  .lang-col.latin .author{ border-left-color:var(--gold); }
+  .author button.ahead{ all:unset; box-sizing:border-box; width:100%; cursor:pointer; padding:11px 14px; display:block; }
+  .author .aname{ font-weight:600; font-size:16px; display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+  .author .adates{ font-size:12px; color:var(--ink-soft); margin-top:1px; }
+  .author .acount{ font-size:12px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
+  .author .bar{ margin-top:7px; height:5px; }
+  .author .chapters{ margin:0; padding:4px 14px 10px; border-top:1px solid var(--line); }
+  .author .tags{ margin-left:6px; white-space:nowrap; } .author .tags span{ display:inline-block; font-size:10px; font-weight:700; line-height:1; padding:2px 5px; border-radius:4px; margin-right:3px; vertical-align:1px; } .author .tag-M{ background:var(--gold-soft); color:var(--gold); } .author .tag-C{ background:var(--surface-2); color:var(--accent); border:1px solid var(--line); }
+  .author.complete .aname{ color:var(--moss); }
+  .multi{ padding:8px 0 4px; border-bottom:1px dashed var(--line); } .multi:last-child{ border-bottom:none; }
+  .mtitle{ display:flex; justify-content:space-between; gap:8px; font-size:14px; margin-bottom:6px; }
+  .mcount{ font-size:12px; color:var(--ink-soft); }
+  .chips{ display:flex; flex-wrap:wrap; gap:5px; }
+  .chip{ font:inherit; font-size:12px; font-weight:600; min-width:30px; height:28px; padding:0 6px; border-radius:7px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-soft); cursor:pointer; }
+  .chip.tM, .chip.tMC{ border-color:var(--gold); } .chip.tC{ border-color:var(--accent); }
+  .chip.tM, .chip.tMC{ color:var(--ink); } .chip.tC{ color:var(--ink); }
+  .chip.on{ background:var(--moss); border-color:var(--moss); color:#fff; }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 </head>
@@ -374,6 +405,144 @@
     }
   ];
 
+  // Classical canon. Author: [id, name, dates, works]. Works split by "|".
+  // "Title#1-24" = a work in numbered books (one tick per book). Segments may carry tags and be comma-separated: "Livy#{MC}1-5,6-10,{MC}21-22,23-45".
+  // A leading {M}/{C}/{MC} on a work or segment marks it as on the Middlebury (M) and/or Colorado College (C) syllabus.
+  var CLASSICS = [
+    {genre:"Epic and didactic poetry", pairs:"Homer ↔ Virgil · Hesiod ↔ Lucretius (and Virgil’s Georgics)",
+     greek:[
+      ["homer","Homer","c. 8th c. BC","Iliad#{MC}1-24|Odyssey#{MC}1-24|{C}Homeric Hymns (Demeter, Apollo, Hermes)"],
+      ["hesiod","Hesiod","c. 700 BC","{C}Theogony|{C}Works and Days"],
+      ["apollonius","Apollonius of Rhodes","3rd c. BC","Argonautica#1-4"]],
+     latin:[
+      ["virgil","Virgil","70–19 BC","Eclogues#{C}1-10|Georgics#1-4|Aeneid#{MC}1-12"],
+      ["lucretius","Lucretius","c. 99–55 BC","On the Nature of Things (De rerum natura)#{MC}1-3,{M}4-6"],
+      ["ovid-met","Ovid","43 BC – AD 17","Metamorphoses#{MC}1-15"],
+      ["lucan","Lucan","AD 39–65","Civil War (Pharsalia)#{MC}1,{M}2-10"]]},
+
+    {genre:"Lyric, elegy and pastoral", pairs:"Sappho ↔ Catullus · Pindar ↔ Horace · Callimachus ↔ Propertius and Ovid · Theocritus ↔ Virgil’s Eclogues",
+     greek:[
+      ["archaic-lyric","Archaic lyric (Archilochus, Sappho, Alcaeus, Anacreon)","7th–6th c. BC","{C}Sappho: poems and fragments|{C}Archilochus: fragments|{C}Alcaeus, Alcman, Stesichorus, Simonides, Solon: fragments"],
+      ["pindar","Pindar","c. 518–438 BC","{C}Olympian Odes|Pythian Odes|Nemean Odes|Isthmian Odes"],
+      ["theocritus","Theocritus","c. 300–260 BC","{C}Idylls"],
+      ["callimachus","Callimachus","c. 310–240 BC","Hymns|Aetia (fragments)|Epigrams"],
+      ["anthology","The Greek Anthology","epigrams, 7th c. BC – AD 6th c.","Selection of epigrams"]],
+     latin:[
+      ["catullus","Catullus","c. 84–54 BC","{MC}Poems 1–60|{MC}Poems 61–68 (long poems)|{MC}Poems 69–116 (elegiac epigrams)"],
+      ["horace","Horace","65–8 BC","Odes#{MC}1-3,4|Epodes|{C}Satires#1-2|{C}Epistles#1-2|Art of Poetry"],
+      ["propertius","Propertius","c. 50–15 BC","Elegies#{C}1,2-3,{C}4"],
+      ["tibullus","Tibullus","c. 55–19 BC","Elegies#1-2"],
+      ["ovid-love","Ovid (love and exile poetry)","43 BC – AD 17","Amores#1-3|Art of Love (Ars Amatoria)#{C}1,2-3|Heroides|Fasti#1-6|Tristia#1-5|Letters from Pontus#1-4"]]},
+
+    {genre:"Tragedy", pairs:"Aeschylus, Sophocles and Euripides ↔ Seneca (the only Roman tragedies to survive)",
+     greek:[
+      ["aeschylus","Aeschylus","525–456 BC","Persians|Seven against Thebes|Suppliants|{C}Prometheus Bound|{MC}Oresteia: Agamemnon|{MC}Oresteia: Libation Bearers|{MC}Oresteia: Eumenides"],
+      ["sophocles","Sophocles","c. 496–406 BC","Ajax|{M}Antigone|{MC}Oedipus the King|Women of Trachis|{C}Electra|{C}Philoctetes|{MC}Oedipus at Colonus"],
+      ["euripides","Euripides","c. 480–406 BC","{C}Alcestis|{MC}Medea|Hippolytus|Trojan Women|{C}Electra|{MC}Bacchae|{M}Ion|Helen|Iphigenia at Aulis"]],
+     latin:[
+      ["seneca-tragedy","Seneca (tragedies)","c. 4 BC – AD 65","Medea|Phaedra|Oedipus|Trojan Women|{M}Thyestes|Agamemnon"]]},
+
+    {genre:"Comedy", pairs:"Aristophanes ↔ Plautus · Menander ↔ Terence",
+     greek:[
+      ["aristophanes","Aristophanes","c. 446–386 BC","{C}Acharnians|{MC}Clouds|Wasps|{MC}Birds|{C}Lysistrata|{MC}Frogs|Assemblywomen"],
+      ["menander","Menander","c. 342–291 BC","Dyskolos (The Grouch)|{C}Samia|Aspis"]],
+     latin:[
+      ["plautus","Plautus","c. 254–184 BC","Pot of Gold (Aulularia)|{M}Menaechmi|{M}Braggart Soldier (Miles Gloriosus)|Casina|Pseudolus|Amphitryon"],
+      ["terence","Terence","c. 195–159 BC","Girl from Andros|Self-Tormentor|Eunuch|Phormio|{M}Brothers (Adelphoe)|{M}Mother-in-Law (Hecyra)"]]},
+
+    {genre:"History and biography", pairs:"Herodotus ↔ Livy · Thucydides ↔ Sallust and Tacitus · Xenophon ↔ Caesar · Plutarch ↔ Suetonius",
+     greek:[
+      ["herodotus","Herodotus","c. 484–425 BC","Histories#{MC}1-9"],
+      ["thucydides","Thucydides","c. 460–400 BC","History of the Peloponnesian War#{MC}1-2,{M}3-8"],
+      ["xenophon","Xenophon","c. 430–354 BC","Anabasis#{C}1-7|Hellenika (Greek History)#{C}1-7|Memorabilia (on Socrates)#{C}1-4|Cyropaedia#{C}1-8|Oeconomicus|Symposium"],
+      ["polybius","Polybius","c. 200–118 BC","Histories#{C}1,2-5,{C}6"],
+      ["arrian","Arrian","c. AD 86–160","Anabasis of Alexander#1-7"],
+      ["plutarch","Plutarch","c. AD 46–120","Life of Lycurgus|Life of Themistocles|Life of Pericles|Life of Alcibiades|{C}Life of Alexander|{C}Life of Caesar|Life of Cicero|Life of Antony"]],
+     latin:[
+      ["caesar","Julius Caesar","100–44 BC","Gallic War#{C}1-8|Civil War#1-3"],
+      ["sallust","Sallust","86–35 BC","{MC}Conspiracy of Catiline|{M}Jugurthine War"],
+      ["livy","Livy","59 BC – AD 17","From the Founding of the City#{MC}1-5,6-10,{MC}21-22,23-45"],
+      ["augustus","Augustus","63 BC – AD 14","Res Gestae (Deeds of the Divine Augustus)"],
+      ["tacitus","Tacitus","c. AD 56–120","Agricola|Germania|Annals#{MC}1-3,{M}4-6,{M}11-16|Histories#1-5"],
+      ["suetonius","Suetonius","c. AD 70–130","Life of Julius Caesar|{C}Life of Augustus|Life of Tiberius|Life of Caligula|Life of Claudius|{C}Life of Nero|Life of Galba|Life of Otho|Life of Vitellius|Life of Vespasian|Life of Titus|Life of Domitian"]]},
+
+    {genre:"Philosophy and science", pairs:"Plato and Aristotle ↔ Cicero · Epicurus ↔ Lucretius · Epictetus and Marcus Aurelius ↔ Seneca",
+     greek:[
+      ["presocratics","The Presocratics","6th–5th c. BC","{C}Heraclitus: fragments|{C}Parmenides: fragments|Empedocles and Democritus: fragments"],
+      ["plato","Plato","c. 428–348 BC","{C}Euthyphro (our translation)|{MC}Apology|{C}Crito|Meno|{C}Phaedo|{MC}Symposium|Phaedrus|Gorgias|Republic#{MC}1-10|Theaetetus|Timaeus"],
+      ["aristotle","Aristotle","384–322 BC","Nicomachean Ethics#{MC}1-10|Politics#{MC}1-8|{MC}Poetics|Rhetoric#1-3|Metaphysics#1-11,{C}12,13-14|On the Soul#{C}1-3|Physics#1,{C}2,3-8"],
+      ["epicurus","Epicurus","341–270 BC","Letter to Menoeceus|Principal Doctrines"],
+      ["diogenes","Diogenes Laertius","3rd c. AD","Lives of the Philosophers#1-5,{C}6-7,8-10"],
+      ["epictetus","Epictetus","c. AD 50–135","Handbook (Enchiridion)|Discourses#1-4"],
+      ["marcus","Marcus Aurelius","AD 121–180","Meditations#1-12"],
+      ["hippocrates","Hippocrates (and school)","5th c. BC","{C}Airs, Waters, Places|Oath and selected treatises"]],
+     latin:[
+      ["cicero-phil","Cicero (philosophy)","106–43 BC","On the Republic#{M}1,2-6|On the Laws#1-3|On Duties (De officiis)#{M}1,2-3|On the Ends of Good and Evil#1-5|Tusculan Disputations#1-5|On the Nature of the Gods#1-3|On Friendship|On Old Age"],
+      ["seneca-phil","Seneca (philosophy)","c. 4 BC – AD 65","Letters to Lucilius#1-20|On the Shortness of Life|On Anger#{M}1-3|On Benefits#1-7|Consolation to Marcia|Consolation to Helvia|Consolation to Polybius"],
+      ["boethius","Boethius","c. AD 477–524","Consolation of Philosophy#1-5"]]},
+
+    {genre:"Oratory and rhetoric", pairs:"Demosthenes ↔ Cicero · Lysias ↔ Cicero’s court speeches",
+     greek:[
+      ["lysias","Lysias","c. 445–380 BC","{C}On the Murder of Eratosthenes (1)|{C}On the Olive Stump (7)|Against Eratosthenes (12)"],
+      ["demosthenes","Demosthenes","384–322 BC","First Philippic (our translation)|Olynthiac 1|Olynthiac 2|Olynthiac 3|Third Philippic|{C}On the Crown"],
+      ["isocrates","Isocrates","436–338 BC","Panegyricus|Antidosis"]],
+     latin:[
+      ["cicero-orat","Cicero (speeches and rhetoric)","106–43 BC","{M}Against Verres, first hearing (Actio I)|Against Verres, second hearing (Actio II)#1-5|Catilinarians#{MC}1-2,3-4|For Archias|{MC}For Caelius|Philippics#1-14|On the Orator (De oratore)#1-3"],
+      ["quintilian","Quintilian","c. AD 35–96","Institutes of Oratory#1-9,{C}10,11-12"]]},
+
+    {genre:"Satire, novel and epigram", pairs:"Lucian ↔ Apuleius and Petronius · Greek Anthology ↔ Martial",
+     greek:[
+      ["lucian","Lucian","c. AD 125–180","{C}True History|Dialogues of the Dead|Dialogues of the Gods|Icaromenippus"],
+      ["longus","Longus","2nd–3rd c. AD","Daphnis and Chloe#{C}1-4"]],
+     latin:[
+      ["petronius","Petronius","d. AD 66","{MC}Satyricon (Cena Trimalchionis and the surviving episodes)"],
+      ["apuleius","Apuleius","c. AD 124–170","The Golden Ass (Metamorphoses)#{MC}1,{M}2-10,{MC}11"],
+      ["martial","Martial","c. AD 40–104","Epigrams#{C}1-12"],
+      ["juvenal","Juvenal","c. AD 60–130","Satires#{M}1-2,{MC}3,{M}4-5,{MC}6,{M}7-16"]]},
+
+    {genre:"Letters", pairs:"No exact Greek counterpart: Epictetus and Plutarch come closest",
+     greek:[],
+     latin:[
+      ["cicero-letters","Cicero (letters)","106–43 BC","Letters to Atticus#1-16|Letters to friends (Ad familiares)#1-16|Letters to his brother Quintus#1-3"],
+      ["pliny","Pliny the Younger","AD 61–113","Letters#{C}1-9,{C}10 (with Trajan)"]]},
+
+    {genre:"Early Christian literature", pairs:"The Greek New Testament ↔ Augustine",
+     greek:[
+      ["nt","The New Testament","1st c. AD","{C}Gospel of Mark|Gospel of Luke|Acts of the Apostles|{C}Paul: Letter to the Romans"]],
+     latin:[
+      ["augustine","Augustine","AD 354–430","Confessions#{C}1-3,4-7,{C}8,9-13|City of God#1-22"]]}
+  ];
+
+  function cslug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0,48); }
+  function ctags(s){ var m = /^\{([MC]+)\}/.exec(s); return m ? [m[1], s.slice(m[0].length)] : ["", s]; }
+  function cwork(authorId, spec){
+    var hash = spec.indexOf("#");
+    var wid, units = [];
+    if (hash < 0) {
+      var t = ctags(spec);
+      wid = authorId + "-" + cslug(t[1]);
+      return { title:t[1], multi:false, units:[{ id:wid, label:t[1], tags:t[0], n:null }] };
+    }
+    var title = spec.slice(0, hash), tt = ctags(title);
+    var base = authorId + "-" + cslug(tt[1]);
+    spec.slice(hash+1).split(",").forEach(function(seg){
+      var st = ctags(seg.trim());
+      var rng = /^(\d+)(?:-(\d+))?/.exec(st[1]);
+      var a = parseInt(rng[1],10), b = rng[2] ? parseInt(rng[2],10) : a;
+      var tags = st[0] || tt[0];
+      for (var n=a; n<=b; n++) units.push({ id: base + "-" + n, label: tt[1] + ", " + n, tags: tags, n: n });
+    });
+    return { title:tt[1], multi:true, units:units };
+  }
+  function cparse(list){
+    return list.map(function(a){
+      var works = a[3].split("|").map(function(w){ return cwork(a[0], w); });
+      var units = []; works.forEach(function(w){ units = units.concat(w.units); });
+      return { id:a[0], name:a[1], dates:a[2], works:works, units:units };
+    });
+  }
+  CLASSICS.forEach(function(g){ g.greek = cparse(g.greek); g.latin = cparse(g.latin); });
+
   var STATE = loadState();
 
   function loadState(){
@@ -381,10 +550,16 @@
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         var parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.books)) return parsed;
+        if (parsed && Array.isArray(parsed.books)) {
+          if (!parsed.cdone) parsed.cdone = {};
+          if (!parsed.copen) parsed.copen = {};
+          if (!parsed.view) parsed.view = "books";
+          if (!parsed.cfilter) parsed.cfilter = "all";
+          return parsed;
+        }
       }
     }catch(e){}
-    return { books: JSON.parse(JSON.stringify(DEFAULT_BOOKS)), filter: "all" };
+    return { books: JSON.parse(JSON.stringify(DEFAULT_BOOKS)), filter: "all", cdone:{}, copen:{}, view:"books", cfilter:"all" };
   }
 
   function saveState(){
@@ -437,7 +612,105 @@
     return {finished:"Finished", reading:"Reading", notstarted:"Not started", empty:"No chapters yet"}[s];
   }
 
+  function classicStats(){
+    var t=0,d=0,gt=0,gd=0,lt=0,ld=0;
+    CLASSICS.forEach(function(g){
+      g.greek.forEach(function(a){ a.units.forEach(function(w){ t++; gt++; if(STATE.cdone[w.id]){d++;gd++;} }); });
+      g.latin.forEach(function(a){ a.units.forEach(function(w){ t++; lt++; if(STATE.cdone[w.id]){d++;ld++;} }); });
+    });
+    return {t:t,d:d,pct:t?Math.round(d/t*100):0,gt:gt,gd:gd,lt:lt,ld:ld};
+  }
+
+  function tagBadges(tags){
+    if (!tags) return '';
+    return '<span class="tags">' + tags.split("").map(function(k){ return '<span class="tag-' + k + '" title="' + (k==="M" ? "On the Middlebury College senior exam list" : "On the Colorado College Classics reading lists") + '">' + k + '</span>'; }).join("") + '</span>';
+  }
+
+  function renderAuthor(a, lang){
+    var done = a.units.filter(function(w){ return STATE.cdone[w.id]; }).length;
+    var total = a.units.length;
+    var open = !!STATE.copen[a.id];
+    var pct = total ? Math.round(done/total*100) : 0;
+    var onlySyl = STATE.cfilter === "core";
+    var out = '<div class="author' + (done===total?' complete':'') + '" data-expanded="' + open + '">';
+    out += '<button class="ahead" data-action="copen" data-author="' + a.id + '" aria-expanded="' + open + '">';
+    out += '<div class="aname display"><span>' + esc(a.name) + '</span><span class="acount num">' + done + '/' + total + '</span></div>';
+    out += '<div class="adates">' + esc(a.dates) + '</div>';
+    out += '<div class="bar"><span style="width:' + pct + '%"></span></div>';
+    out += '</button>';
+    if (open) {
+      out += '<div class="chapters">';
+      a.works.forEach(function(w){
+        var units = onlySyl ? w.units.filter(function(u){ return u.tags; }) : w.units;
+        if (!units.length) return;
+        if (!w.multi) {
+          var u = units[0], on = !!STATE.cdone[u.id];
+          out += '<div class="chapter-row ' + (on?'done':'') + '">';
+          out += '<input type="checkbox" data-action="ctick" data-work="' + u.id + '" id="chk-' + u.id + '" ' + (on?'checked':'') + '>';
+          out += '<label class="clabel" for="chk-' + u.id + '">' + esc(u.label) + tagBadges(u.tags) + '</label></div>';
+        } else {
+          var wd = w.units.filter(function(x){ return STATE.cdone[x.id]; }).length;
+          out += '<div class="multi"><div class="mtitle"><span>' + esc(w.title) + '</span><span class="num mcount">' + wd + '/' + w.units.length + '</span></div><div class="chips">';
+          units.forEach(function(u){
+            var on = !!STATE.cdone[u.id];
+            out += '<button class="chip' + (on?' on':'') + (u.tags ? ' t' + u.tags : '') + '" data-action="ctick" data-work="' + u.id + '" aria-pressed="' + on + '" title="' + esc(u.label) + (u.tags ? ' (' + u.tags.split("").join(", ") + ')' : '') + '">' + u.n + '</button>';
+          });
+          out += '</div></div>';
+        }
+      });
+      out += '</div>';
+    }
+    out += '</div>';
+    return out;
+  }
+
+  function renderClassics(){
+    var app = document.getElementById("app");
+    var o = classicStats();
+    var html = '<a class="back-link" href="index.html">&larr; Book Maps</a>';
+    html += '<header class="top">';
+    html += '  <div><h1 class="display">Reading Ledger</h1><p class="tag">Classical texts: the Greek canon and its Latin counterparts. Tick works off as you go.</p></div>';
+    html += '  <div class="summary-card">';
+    html += '    <div class="row"><span class="label">Books &amp; works read</span><span class="value num">' + o.d + ' / ' + o.t + '</span></div>';
+    html += '    <div class="row"><span class="label">Greek</span><span class="value num">' + o.gd + ' / ' + o.gt + '</span></div>';
+    html += '    <div class="row"><span class="label">Latin</span><span class="value num">' + o.ld + ' / ' + o.lt + '</span></div>';
+    html += '    <div class="bar"><span style="width:' + o.pct + '%"></span></div>';
+    html += '  </div></header>';
+    html += renderViewSwitch();
+    html += '<div class="device-note">Progress here is saved in this browser only &mdash; it won\'t show up if you open this page on another device. Badges show which university syllabus a work is on: <b>M</b> = <a href="https://www.middlebury.edu/college/academics/classics-and-classical-studies/student-resources/reading-list" target="_blank" rel="noopener">Middlebury College</a> senior-exam list, <b>C</b> = <a href="https://www.coloradocollege.edu/academics/dept/classics/resources/reading-list/" target="_blank" rel="noopener">Colorado College</a> reading lists. In the numbered book buttons, a gold outline means Middlebury (and usually Colorado too), a blue outline Colorado only. No badge or outline: my addition. Click a number to tick that book off.</div>';
+    html += '<div class="tabs" role="tablist">';
+    [["all","All"],["greek","Greek only"],["latin","Latin only"],["core","On a syllabus only"]].forEach(function(t){
+      html += '<button class="tab" data-action="cfilter" data-filter="' + t[0] + '" aria-pressed="' + (STATE.cfilter===t[0]) + '">' + t[1] + '</button>';
+    });
+    html += '</div>';
+    CLASSICS.forEach(function(g){
+      var showG = STATE.cfilter !== "latin" && g.greek.length;
+      var showL = STATE.cfilter !== "greek" && g.latin.length;
+      if (!showG && !showL && !(STATE.cfilter==="all")) return;
+      html += '<section class="genre"><h2 class="display">' + esc(g.genre) + '</h2><p class="pairs">' + esc(g.pairs) + '</p>';
+      html += '<div class="pair" style="' + ((STATE.cfilter==="greek"||STATE.cfilter==="latin") ? 'grid-template-columns:1fr' : '') + '">';
+      if (STATE.cfilter !== "latin") {
+        html += '<div class="lang-col greek"><h4>Greek</h4>';
+        html += g.greek.length ? g.greek.map(function(a){ return renderAuthor(a,"greek"); }).join("") : '<p class="none">None in this section.</p>';
+        html += '</div>';
+      }
+      if (STATE.cfilter !== "greek") {
+        html += '<div class="lang-col latin"><h4>Latin</h4>';
+        html += g.latin.length ? g.latin.map(function(a){ return renderAuthor(a,"latin"); }).join("") : '<p class="none">None in this section.</p>';
+        html += '</div>';
+      }
+      html += '</div></section>';
+    });
+    html += '<div class="toast" id="toast"></div>';
+    app.innerHTML = html;
+  }
+
+  function renderViewSwitch(){
+    return '<div class="viewsw" role="tablist"><button data-action="setview" data-view="books" aria-pressed="' + (STATE.view!=="classics") + '">Books</button><button data-action="setview" data-view="classics" aria-pressed="' + (STATE.view==="classics") + '">Classical texts</button></div>';
+  }
+
   function render(){
+    if (STATE.view === "classics") { renderClassics(); return; }
     var app = document.getElementById("app");
     var o = overallStats();
 
@@ -460,6 +733,7 @@
     html += '  </div>';
     html += '</header>';
 
+    html += renderViewSwitch();
     html += '<div class="device-note">Progress here is saved in this browser only — it won\'t show up if you open this page on another device.</div>';
 
     html += '<div class="tabs" role="tablist">';
@@ -576,6 +850,11 @@
     var action = el.getAttribute("data-action");
     var bookId = el.getAttribute("data-book");
     var book = bookId ? findBook(bookId) : null;
+
+    if (action === "setview") { STATE.view = el.getAttribute("data-view"); render(); saveState(); window.scrollTo(0,0); return; }
+    if (action === "cfilter") { STATE.cfilter = el.getAttribute("data-filter"); render(); saveState(); return; }
+    if (action === "copen") { var aid = el.getAttribute("data-author"); STATE.copen[aid] = !STATE.copen[aid]; render(); saveState(); return; }
+    if (action === "ctick") { var wid = el.getAttribute("data-work"); if (STATE.cdone[wid]) delete STATE.cdone[wid]; else STATE.cdone[wid] = true; render(); saveState(); return; }
 
     if (action === "filter") { STATE.filter = el.getAttribute("data-filter"); render(); return; }
 

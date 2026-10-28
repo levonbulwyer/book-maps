@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Design Syllabus &mdash; Levon's Book Projects</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{ --bg:#EAE7DC; --surface:#FBFAF6; --surface-2:#F1EEE4; --ink:#25281F; --ink-soft:#5B5E4F; --line:#D6D2C2; --accent:#2F4858; --accent-ink:#F3F1E6; --gold:#A9772F; --gold-soft:#E8D9BC; --moss:#5B7553; --shadow:0 1px 2px rgba(37,40,31,.06), 0 6px 16px -8px rgba(37,40,31,.18); color-scheme:light; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#191B16; --surface:#22241D; --surface-2:#2A2C23; --ink:#EDE9DA; --ink-soft:#B3AF9C; --line:#3A3C31; --accent:#7FA3B8; --accent-ink:#171B1E; --gold:#D7A552; --gold-soft:#453B26; --moss:#8AAE7E; --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 24px -10px rgba(0,0,0,.55); color-scheme:dark; } }
+  *,*::before,*::after{ box-sizing:border-box }
+  [hidden]{ display:none!important }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Work Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; padding:28px 20px 60px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  #app{ max-width:860px; margin:0 auto; }
+  .display{ font-family:"Fraunces",Georgia,serif; }
+  .num{ font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; }
+  a{ color:var(--accent); }
+  .back-link{ display:inline-block; font-size:13px; font-weight:600; color:var(--ink-soft); text-decoration:none; margin-bottom:16px; }
+  header.top{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; }
+  h1{ font-size:clamp(28px,4vw,38px); font-weight:600; margin:0 0 4px; letter-spacing:-.01em; }
+  .tag{ margin:0; color:var(--ink-soft); font-size:14px; max-width:46ch; }
+  .summary-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 18px; box-shadow:var(--shadow); min-width:220px; }
+  .summary-card .row{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px; }
+  .label{ font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); }
+  .value{ font-size:18px; font-weight:600; }
+  .bar{ height:7px; border-radius:99px; background:var(--surface-2); overflow:hidden; border:1px solid var(--line); }
+  .bar>span{ display:block; height:100%; background:linear-gradient(90deg,var(--gold),var(--accent)); }
+  .note{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:13px; color:var(--ink-soft); margin:0 0 20px; }
+  .roles{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 0 26px; }
+  @media(max-width:640px){ .roles{ grid-template-columns:1fr; } }
+  .role{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 18px; box-shadow:var(--shadow); }
+  .role h2{ font-size:18px; margin:0 0 6px; } .role.you{ border-left:6px solid var(--gold); } .role.me{ border-left:6px solid var(--accent); }
+  .role ul{ margin:0; padding-left:18px; font-size:14px; } .role li{ margin:3px 0; }
+  .mod{ background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); margin:0 0 14px; overflow:hidden; }
+  .mod>button.head{ all:unset; box-sizing:border-box; display:block; width:100%; cursor:pointer; padding:14px 18px; }
+  .mod .mnum{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+  .mod .mtitle{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; font-size:20px; font-weight:600; }
+  .mod .mcount{ font-size:12.5px; color:var(--ink-soft); font-weight:500; white-space:nowrap; }
+  .mod .goal{ font-size:14px; color:var(--ink-soft); margin:2px 0 8px; }
+  .mod .body{ padding:0 18px 16px; border-top:1px solid var(--line); }
+  .mod h3{ font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); margin:16px 0 6px; }
+  .row-item{ display:flex; gap:10px; padding:7px 0; border-bottom:1px dashed var(--line); align-items:flex-start; }
+  .row-item:last-child{ border-bottom:none; }
+  .row-item input{ width:17px; height:17px; accent-color:var(--moss); margin-top:3px; flex-shrink:0; }
+  .row-item .t{ font-size:14.5px; } .row-item .by{ color:var(--ink-soft); font-size:13px; } .row-item .nt{ display:block; color:var(--ink-soft); font-size:13px; }
+  .row-item.done .t{ text-decoration:line-through; text-decoration-color:var(--line); color:var(--ink-soft); }
+  .pill{ display:inline-block; font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:5px; margin-left:6px; vertical-align:1px; }
+  .pill.core{ background:var(--gold-soft); color:var(--gold); } .pill.also{ background:var(--surface-2); color:var(--ink-soft); border:1px solid var(--line); }
+  table.terms{ border-collapse:collapse; width:100%; font-size:13.5px; }
+  table.terms td{ border-bottom:1px solid var(--line); padding:6px 8px 6px 0; vertical-align:top; } table.terms td:first-child{ font-weight:600; width:26%; }
+  .split{ display:grid; grid-template-columns:1fr 1fr; gap:12px; } @media(max-width:640px){ .split{ grid-template-columns:1fr; } }
+  .split>div{ background:var(--surface-2); border-radius:10px; padding:10px 12px; font-size:13.5px; }
+  .split b{ display:block; font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); margin-bottom:3px; }
+  .check{ background:var(--gold-soft); border-radius:10px; padding:10px 12px; font-size:14px; }
+  pre{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:12px; font-size:12.5px; white-space:pre-wrap; margin:6px 0; }
+  button.copy{ font:inherit; font-size:12px; font-weight:600; color:var(--accent); background:none; border:1px solid var(--line); border-radius:99px; padding:3px 11px; cursor:pointer; }
+  .toast{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--accent); color:var(--accent-ink); padding:7px 14px; border-radius:99px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; } .toast.show{ opacity:1; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+"use strict";
+var KEY = "design-syllabus-v1";
+
+var ADR = "Title: (a short noun phrase, e.g. “Reading progress lives in files, not the browser”)\nStatus: proposed / accepted / replaced by (title)\nContext: What forces are at play? What problem are we solving? What do I care about here?\nDecision: We will … (one or two sentences, in my words)\nConsequences: What becomes easier? What becomes harder? What am I giving up?";
+var BRIEF = "What this is for: (one sentence, in plain words)\nWho uses it and when: (me, on my Mac / on my phone / on the Kindle)\nThe things in it (my words): (the nouns: book, chapter, place, tick …)\nWhat I do with them: (the verbs: tick off, filter, build an epub …)\nWhat must never break: (e.g. my progress, my original files)\nWhat good looks like: (calm, fast to scan, one tap to tick …)\nWhat it must not become: (cluttered, dependent on one browser …)\nI decide / you decide: (which choices come back to me)";
+
+var MODULES = [
+ {id:"m1", title:"What design is", goal:"Design is deciding what a thing is for and what shape fits it. Code comes after.",
+  readings:[
+   ["m1a","The Sciences of the Artificial, ch. 5 “The Science of Design”","Herbert Simon","core","Design as changing existing situations into preferred ones."],
+   ["m1b","The Design of Everyday Things","Don Norman","core","Affordances, mental models, why things confuse people."],
+   ["m1c","Notes on the Synthesis of Form, ch. 1–2","Christopher Alexander","also","Good design is a fit between a form and its context."]],
+  terms:[["Form and context","The thing you make and the situation it must fit. Design is the fit between them."],["Affordance","What a thing invites you to do."],["Mental model","The picture in your head of how something works. Good design matches it."]],
+  exercise:"Write four sentences on your Reading Ledger: what situation it serves, who uses it, what it must fit (your Kindle? your phone? your habit?), and one way it currently doesn’t fit.",
+  you:"Say what the situation is and what “fits” means for you.", me:"Show you the options that fit, with their costs.",
+  check:"Pick one thing you use daily that works well. What is its form, and what context does it fit so well?"},
+ {id:"m2", title:"Concepts: the nouns and verbs of a system", goal:"A system is a small set of independent concepts. Name them, give each one purpose, and the rest follows.",
+  readings:[
+   ["m2a","The Essence of Software: Why Concepts Matter for Great Design","Daniel Jackson","core","The best no-code book on software design. Read it first.","https://press.princeton.edu/node/46779"],
+   ["m2b","The Essence of Software with Daniel Jackson (ACM talk)","ACM Learning Center","also","Watch if you prefer a talk to the book.","https://learning.acm.org/techtalks/softwaredesign"]],
+  terms:[["Concept","A unit of behaviour with its own purpose, such as “tick”, “shelf” or “filter”."],["Purpose","The one reason a concept exists. If you can’t state it, the concept is muddled."],["Operational principle","The short story that shows the concept doing its job."]],
+  exercise:"List the concepts in your Reading Ledger. For each, write its purpose in one sentence and its operational principle in two. Which concept is doing two jobs?",
+  you:"Decide what the concepts are and what each is for.", me:"Build each concept so it stands alone and can be reused in other tools.",
+  check:"In the Ledger, is “chapter” the same concept as “work” in the classics section? Argue both sides, then decide."},
+ {id:"m3", title:"Systems thinking", goal:"See your setup as stocks, flows and feedback instead of a pile of files.",
+  readings:[["m3a","Thinking in Systems: A Primer, ch. 1–2","Donella Meadows","core","No software in it. Stocks, flows, feedback loops."]],
+  terms:[["Stock","Something that accumulates (books read, files stored)."],["Flow","What fills or drains a stock (reading, importing, deleting)."],["Feedback loop","Output that changes the next input (finishing a book makes you want the next)."]],
+  exercise:"Draw your reading life as stocks and flows: books to read, books in progress, books finished; what moves things between them? Where does a backlog build up?",
+  you:"Decide what to measure and what “good flow” means.", me:"Make the numbers visible without extra effort from you.",
+  check:"What single loop in your projects reinforces itself, and which one quietly drains you?"},
+ {id:"m4", title:"Naming the domain", goal:"Use one precise vocabulary for your world, in your own words, everywhere: in notes, data and tools.",
+  readings:[
+   ["m4a","Domain-Driven Design Distilled","Vaughn Vernon","core","Short. Skip the code samples. Bounded contexts and ubiquitous language.","https://oreilly.com/library/view/domain-driven-design-distilled/9780134434964"],
+   ["m4b","Domain-Driven Design","Eric Evans","also","The original. Read only the chapters on language and models."],
+   ["m4c","Introducing EventStorming","Alberto Brandolini","also","A sticky-note method to discover a system’s events."]],
+  terms:[["Domain","The part of the world your tool is about (books, translation, places)."],["Ubiquitous language","One vocabulary, used the same way in speech, notes and tools."],["Bounded context","An area where each word has exactly one meaning."],["Aggregate / value object","A cluster of things treated as one unit / a thing defined only by its values."]],
+  exercise:"Write a glossary of 12 words from your own work: edition, translation, notes, place, chapter, tick, and so on. Where does one word mean two things in two projects?",
+  you:"Choose the words and what they mean. This is your discretion.", me:"Use your words exactly in file names, data fields and screens.",
+  check:"“Book” appears in your Ledger, Calibre and the epub projects. Is it the same thing in each?"},
+ {id:"m5", title:"Boundaries and layers", goal:"Decide what depends on what. Keep your data and rules independent of the tools that display them.",
+  readings:[
+   ["m5a","Clean Architecture: Entities, Use Cases and the Dependency Rule","chiristo.dev","core","The article you started from.","https://chiristo.dev/blog/clean-architecture-entities-use-cases-dependency-rule"],
+   ["m5b","Ports and Adapters Pattern","chiristo.dev","core","The previous post in the series.","https://chiristo.dev/blog/hexagonal-architecture-ports-and-adapters"],
+   ["m5c","The Clean Architecture","Robert C. Martin","also","The 2012 original.","https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html"],
+   ["m5d","On the Criteria To Be Used in Decomposing Systems into Modules","David Parnas (1972)","core","Short classic: split a system by what is likely to change.","https://www.cse.sc.edu/~mgv/csce590f20/ParnasCriteria.pdf"],
+   ["m5e","A Philosophy of Software Design, ch. 1–4","John Ousterhout","also","Complexity and “deep” modules. Skim the code."],
+   ["m5f","Hexagonal Architecture","Alistair Cockburn","also","The original ports-and-adapters essay (search the title)."]],
+  terms:[["Entity","A core fact with its rules, independent of any app."],["Use case","One thing a person wants to do."],["Port / adapter","The interface the inside asks for / the outside part that supplies it."],["Dependency rule","Dependencies only point inward."],["Hide what changes","Parnas: put each likely change behind its own boundary."]],
+  exercise:"List what is likely to change in your setup over five years (Kindle, reader app, map library, file layout). For each, name what should be protected from it.",
+  you:"Say what must outlast every tool, and what you are willing to swap.", me:"Build the boundaries so the swap is a one-file change.",
+  check:"If MapLibre disappeared tomorrow, which of your files would you want to be unaffected? Why those?"},
+ {id:"m6", title:"Drawing the design", goal:"Make the design visible in four simple diagrams before anything is built.",
+  readings:[
+   ["m6a","The C4 model for visualising software architecture","Simon Brown","core","Free. Context, containers, components, code. You only need the first two.","https://c4model.com/"],
+   ["m6b","The C4 Model: Visualizing Software Architecture","Simon Brown","also","The book version."]],
+  terms:[["System context","One box for your system and the people and systems around it."],["Container","A separately running or stored part (a page, a data file, a database)."],["Component","A part inside a container."]],
+  exercise:"Draw the context and container diagram of everything you use for books: you, Kindle, Mac folders, Calibre, the maps site, Claude. Where are the arrows tangled?",
+  you:"Decide what belongs inside the box and what does not.", me:"Turn your sketch into a clean diagram and check it against the actual files.",
+  check:"Which arrow in your diagram would you most like to delete?"},
+ {id:"m7", title:"Organising information", goal:"Make a collection findable and consistent: labels, categories, and what one record is.",
+  readings:[
+   ["m7a","Information Architecture (the “polar bear book”)","Rosenfeld, Morville & Arango","core","Organisation, labelling, navigation and search systems."],
+   ["m7b","Everything Is Miscellaneous","David Weinberger","also","Why tags beat fixed categories, and when they don’t."],
+   ["m7c","A Simple Guide to Five Normal Forms in Relational Database Theory","William Kent (1983)","also","Short paper: one fact in one place."]],
+  terms:[["Taxonomy","A fixed hierarchy of categories."],["Facet / tag","A label that cuts across categories."],["Single source of truth","Each fact is stored once, and everything else is derived from it."],["Schema","The agreed shape of a record: its fields and what they mean."]],
+  exercise:"Pick your places data. Write the schema for one place: which fields, which are required, which are derived? Then do the same for a book.",
+  you:"Choose the categories and the labels. This is taste.", me:"Enforce the schema with checks, and migrate the existing data to it.",
+  check:"Should “Greek vs Latin” be a category or a tag? What changes in how you browse?"},
+ {id:"m8", title:"Taste and judgment", goal:"Your role as the person who decides: knowing what is good, and what to cut.",
+  readings:[
+   ["m8a","The Design of Design","Fred Brooks","core","Design as the judgment of one mind: conceptual integrity."],
+   ["m8b","Ten Principles for Good Design","Dieter Rams","core","Ten short principles from Vitsoe; search the title. “As little design as possible.”"],
+   ["m8c","The Visual Display of Quantitative Information","Edward Tufte","also","Taste for maps, charts and tables."],
+   ["m8d","Don’t Make Me Think","Steve Krug","also","A short guide to clarity in screens."],
+   ["m8e","The Timeless Way of Building","Christopher Alexander","also","Quality without a name."]],
+  terms:[["Conceptual integrity","The whole feels like one mind made it."],["Subtraction","Removing what doesn’t serve the purpose."]],
+  exercise:"Look at your Reading Ledger and the Anabasis map. For each, write three things you would remove and one you would keep at all costs. Say why.",
+  you:"Say no. Choose what to cut, what to keep, and what feels right.", me:"Offer two or three distinct directions and keep the build simple enough to change.",
+  check:"What is one thing in your tools that someone else would add and you would refuse?"},
+ {id:"m9", title:"Briefing me and recording decisions", goal:"Turn your judgment into instructions that survive from one session to the next.",
+  readings:[["m9a","Documenting Architecture Decisions","Michael Nygard (2011)","core","The origin of the one-page decision record. Search the title."],
+   ["m9b","No Silver Bullet","Fred Brooks (1986)","also","Essential versus accidental complexity."]],
+  terms:[["Decision record (ADR)","A one-page note: context, decision, consequences."],["Design brief","The plain-words description of what you want built."],["Acceptance criteria","How you will know it’s right."]],
+  exercise:"Write a design brief for the Data Library page, then one decision record: “Where does progress data live?” Bring both to me.",
+  templates:true,
+  you:"Write the brief and the decision, in your own words.", me:"Ask the questions the brief leaves open, then build, then show you what I decided on your behalf so you can overrule it.",
+  check:"What is the one decision you keep making over and over that should be written down once?"},
+ {id:"m10", title:"Capstone: design your library architecture", goal:"Apply everything to your own tools and decide what to build.",
+  readings:[], terms:[],
+  exercise:"Produce three things: (1) a one-page glossary of your domain, (2) a context and container diagram of your current setup, (3) two decision records, e.g. where data lives and what the single source of truth is for places and for reading progress.",
+  you:"Make the three documents. Decide.", me:"Audit your files against your design, point out where reality differs, then build the migration and the Data Library.",
+  check:"Looking at all three documents, what would you do first, and what are you deliberately leaving as it is?"}
+];
+
+var STATE = load();
+function load(){ try{ var r=localStorage.getItem(KEY); if(r){ var p=JSON.parse(r); if(p&&p.done) return p; } }catch(e){} return {done:{}, open:{m1:true}}; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(STATE)); }catch(e){ toast("Couldn’t save: storage unavailable"); } }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function toast(m){ var t=document.getElementById("toast"); if(!t) return; t.textContent=m; t.classList.add("show"); clearTimeout(toast._h); toast._h=setTimeout(function(){t.classList.remove("show");},1800); }
+
+function items(m){
+  var out=[]; m.readings.forEach(function(r){ out.push(r[0]); }); out.push(m.id+"-ex"); out.push(m.id+"-ck"); return out;
+}
+function counts(){ var t=0,d=0; MODULES.forEach(function(m){ items(m).forEach(function(i){ t++; if(STATE.done[i]) d++; }); }); return {t:t,d:d,pct:t?Math.round(d/t*100):0}; }
+function row(id, html){ var on=!!STATE.done[id]; return '<div class="row-item '+(on?'done':'')+'"><input type="checkbox" data-act="tick" data-id="'+id+'" id="c-'+id+'" '+(on?'checked':'')+'><label for="c-'+id+'">'+html+'</label></div>'; }
+
+function render(){
+  var c=counts(), app=document.getElementById("app"), h='';
+  h+='<a class="back-link" href="index.html">&larr; Book Maps</a>';
+  h+='<header class="top"><div><h1 class="display">Design Syllabus</h1><p class="tag">How to design systems in your own words, without writing code. Readings, short exercises on your own projects, and a question to bring to me at the end of each module.</p></div>';
+  h+='<div class="summary-card"><div class="row"><span class="label">Done</span><span class="value num">'+c.d+' / '+c.t+'</span></div><div class="bar"><span style="width:'+c.pct+'%"></span></div></div></header>';
+  h+='<p class="note">Progress is saved in this browser only. <b>Core</b> readings are the spine; <b>Also</b> readings are optional. Only readings with a link were checked online; for the others, search the title and author. Bring your answer to each module’s question to me in chat, and we’ll work through it together.</p>';
+  h+='<div class="roles"><div class="role you"><h2 class="display">Your job</h2><ul><li>Purpose: what it is for, and for whom</li><li>The words: what things are called</li><li>Taste: what is good, what to cut</li><li>Boundaries: what must never break</li><li>Final say on every trade-off</li></ul></div>';
+  h+='<div class="role me"><h2 class="display">My job</h2><ul><li>Options, with their costs, in plain words</li><li>The code, data, tests and migrations</li><li>Checking the build against your design</li><li>Telling you what I decided on your behalf</li><li>Keeping it simple enough to change</li></ul></div></div>';
+  MODULES.forEach(function(m,i){
+    var ids=items(m), d=ids.filter(function(x){return STATE.done[x];}).length, open=!!STATE.open[m.id];
+    h+='<section class="mod"><button class="head" data-act="open" data-id="'+m.id+'" aria-expanded="'+open+'"><div class="mnum">Module '+(i+1)+'</div><div class="mtitle display"><span>'+esc(m.title)+'</span><span class="mcount num">'+d+'/'+ids.length+'</span></div><div class="goal">'+esc(m.goal)+'</div><div class="bar"><span style="width:'+Math.round(d/ids.length*100)+'%"></span></div></button>';
+    if(open){
+      h+='<div class="body">';
+      if(m.readings.length){
+        h+='<h3>Readings</h3>';
+        m.readings.forEach(function(r){
+          var title=r[5]?'<a href="'+r[5]+'" target="_blank" rel="noopener">'+esc(r[1])+'</a>':esc(r[1]);
+          h+=row(r[0],'<span class="t">'+title+'</span><span class="pill '+r[3]+'">'+(r[3]==="core"?"CORE":"ALSO")+'</span> <span class="by">'+esc(r[2])+'</span><span class="nt">'+esc(r[4])+'</span>');
+        });
+      }
+      if(m.terms.length){ h+='<h3>Terms</h3><table class="terms">'; m.terms.forEach(function(t){ h+='<tr><td>'+esc(t[0])+'</td><td>'+esc(t[1])+'</td></tr>'; }); h+='</table>'; }
+      h+='<h3>Exercise on your own projects</h3>'+row(m.id+'-ex','<span class="t">'+esc(m.exercise)+'</span>');
+      if(m.templates){
+        h+='<h3>Templates</h3><p style="font-size:13.5px;margin:0 0 4px">Design brief <button class="copy" data-act="copy" data-t="brief">Copy</button></p><pre>'+esc(BRIEF)+'</pre><p style="font-size:13.5px;margin:8px 0 4px">Decision record <button class="copy" data-act="copy" data-t="adr">Copy</button></p><pre>'+esc(ADR)+'</pre>';
+      }
+      h+='<h3>Who does what</h3><div class="split"><div><b>You decide</b>'+esc(m.you)+'</div><div><b>I build</b>'+esc(m.me)+'</div></div>';
+      h+='<h3>Bring this to me</h3><div class="check">'+esc(m.check)+'</div>'+row(m.id+'-ck','<span class="t">Discussed with Claude</span>');
+      h+='</div>';
+    }
+    h+='</section>';
+  });
+  h+='<div class="toast" id="toast"></div>';
+  app.innerHTML=h;
+}
+
+document.getElementById("app").addEventListener("click",function(e){
+  var el=e.target.closest("[data-act]"); if(!el) return;
+  var a=el.getAttribute("data-act"), id=el.getAttribute("data-id");
+  if(a==="open"){ STATE.open[id]=!STATE.open[id]; render(); save(); }
+  else if(a==="tick"){ if(STATE.done[id]) delete STATE.done[id]; else STATE.done[id]=true; render(); save(); }
+  else if(a==="copy"){ var txt=el.getAttribute("data-t")==="brief"?BRIEF:ADR; try{ navigator.clipboard.writeText(txt).then(function(){toast("Copied");},function(){toast("Select the text and copy it");}); }catch(x){ toast("Select the text and copy it"); } }
+});
+render();
+})();
+</script>
+</body>
+</html>
